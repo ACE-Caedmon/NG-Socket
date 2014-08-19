@@ -18,11 +18,14 @@ public class Handler0001 extends SessionMessageHandler {
     @Override
     public void excute(ISession playerOnline) {
         System.out.println("Server recived:"+message);
-        playerOnline.send(new WithCodeMessage((short)1) {
-            @Override
-            public void encode(CustomBuf buf) {
-                buf.writeString("The message from server");
-            }
-        });
+        Message001 message001=new Message001((short)1);
+        message001.setContent("content");
+        playerOnline.send(message001);
+//          playerOnline.send(new WithCodeMessage((short)1) {
+//            private String content;
+//              public String getContent(){
+//                  return "content;";
+//              }
+//          });
     }
 }

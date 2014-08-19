@@ -21,7 +21,7 @@ public class PassportTable extends WithCodeMessage {
 		this.passports = passports;
 	}
 
-	@Override
+    @Override
 	public void encode(CustomBuf buf) {
 		if(code==0){
 			if(passports.size()==256){

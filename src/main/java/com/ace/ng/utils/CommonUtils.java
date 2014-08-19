@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 /**
  * Created by Administrator on 2014/6/7.
  */
-public class ClassUtils {
+public class CommonUtils {
     public static boolean hasDeclaredMethod(Class c,String name,Class... paramTypes){
         Method[] methods=c.getDeclaredMethods();
         boolean b=true;
@@ -30,5 +30,8 @@ public class ClassUtils {
             }
         }
         return false;
+    }
+    public static String firstToUpperCase(String s){
+        return s.replaceFirst( s.substring(0, 1), s.substring(0, 1).toUpperCase());
     }
 }

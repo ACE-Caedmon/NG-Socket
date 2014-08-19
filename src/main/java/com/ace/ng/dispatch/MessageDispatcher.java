@@ -41,7 +41,7 @@ public class MessageDispatcher extends SimpleChannelInboundHandler<MessageHandle
             public void run() {
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
                 session.clear();
-
+                session.noticeCloseComplete();
             }
         });
 	}

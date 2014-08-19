@@ -10,6 +10,7 @@ import io.netty.channel.Channel;
 import io.netty.util.concurrent.Future;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 
@@ -92,4 +93,10 @@ public interface ISession extends Online {
 	 * 清除Session相关信息
 	 * */
 	void clear();
+
+    void waitForCloseComplete() throws InterruptedException;
+
+    void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException;
+
+    void noticeCloseComplete();
 }

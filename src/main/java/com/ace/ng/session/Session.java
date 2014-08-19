@@ -11,10 +11,14 @@ import com.jcwx.frm.current.ITaskSubmiter;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,7 +29,10 @@ public class Session implements ISession{
 	private volatile boolean active=true;
 	private Map<String, Object> varMap=new Hashtable<String, Object>();
 	private ITaskSubmiter submiter;
+    private CountDownLatch closeCompleteLatch=new CountDownLatch(1);
+    private static final long DEFAULT_CLOSE_TIME_OUT=2000;
 	private Lock lock=new ReentrantLock(true);
+    private static Logger logger= LoggerFactory.getLogger(Session.class);
 	public Session(Channel channel){
 		this.channel=channel;
 		this.createTime=System.currentTimeMillis();
@@ -56,10 +63,10 @@ public class Session implements ISession{
 			
 			if(immediately){
 				future.sync();
+                waitForCloseComplete();
 			}
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            logger.error("Wait disconnect task error",e);
 		}
 		return future;
 	}
@@ -127,11 +134,12 @@ public class Session implements ISession{
 			try {
 				if(immediately){
 					future.sync();
+                    waitForCloseComplete(2,TimeUnit.SECONDS);
 				}
 				future=disconnect(immediately);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+                logger.error("Wait disconnect task error",e);
 			}
 		}
 		return future;
@@ -159,5 +167,20 @@ public class Session implements ISession{
 	public void setSubmiter(ITaskSubmiter submiter){
 		this.submiter=submiter;
 	}
+
+
+    @Override
+    public void waitForCloseComplete() throws InterruptedException {
+        closeCompleteLatch.await();
+    }
+
+    @Override
+    public void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException {
+        closeCompleteLatch.await(timeout,unit);
+    }
+    @Override
+    public void noticeCloseComplete() {
+        closeCompleteLatch.countDown();
+    }
 
 }

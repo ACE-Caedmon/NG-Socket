@@ -5,13 +5,11 @@ import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.NotDecode;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.HandlerPropertySetter;
-import com.ace.ng.dispatch.MessageHandlerCreator;
-import com.ace.ng.dispatch.MessageHandlerFactory;
 import com.ace.ng.dispatch.NoOpHandlerPropertySetter;
 import com.ace.ng.dispatch.message.MessageHandler;
 import com.ace.ng.dispatch.message.TCPHandlerFactory;
 import com.ace.ng.session.ISession;
-import com.ace.ng.utils.ClassUtils;
+import com.ace.ng.utils.CommonUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,11 +18,9 @@ import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 网络数据报文解码处理器
@@ -144,9 +140,6 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
 
 
 	}
-    private static String firstToUpperCase(String s){
-        return s.replaceFirst( s.substring(0, 1), s.substring(0, 1).toUpperCase());
-    }
 
     private HandlerPropertySetter getHandlerPropertySetter(Short cmd,MessageHandler handler) throws  Exception{
         //构造HandlerPropertySetter
@@ -161,7 +154,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                 if((handlerPropertySetter=handlerPropertySetterMap.get(cmd))==null){
                     CtMethod setPropertiesMethod=handlerPropertySetterClass.
                             getDeclaredMethod("setHandlerProperties");
-                    if(ClassUtils.hasDeclaredMethod(handler.getClass(),"decode",CustomBuf.class)){//如果自己实现了decode方法,则不采用自动set方式
+                    if(CommonUtils.hasDeclaredMethod(handler.getClass(), "decode", CustomBuf.class)){//如果自己实现了decode方法,则不采用自动set方式
                         setPropertiesMethod.insertAfter("$2.decode($1);");
                     }else{//自动调用set方法解码
                         addAutoDecodeSrc(setPropertiesMethod,tempHandler,handlerClassName);
@@ -186,33 +179,34 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                 if(notDecode==null||!notDecode.value()){//需要解码的字段
                     CtClass typeClass=f.getType();
                     String typeSimpleName=typeClass.getSimpleName();
+                    String setMethodString=setHead+CommonUtils.firstToUpperCase(f.getName());
                     switch (typeSimpleName){
                         case "long":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readLong());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readLong());");
                             break;
                         case "int":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readInt());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readInt());");
                             break;
                         case "short":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readShort());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readShort());");
                             break;
                         case "byte":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readByte());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readByte());");
                             break;
                         case "boolean":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readBoolean();");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readBoolean();");
                             break;
                         case "float":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readFloat());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readFloat());");
                             break;
                         case "double":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readDouble());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readDouble());");
                             break;
                         case "String":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readString());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
                             break;
                         case "Builder":
-                            setPropertiesMethod.insertAfter(setHead+firstToUpperCase(f.getName())+"($1.readToProtoBuf());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readToProtoBuf());");
                             break;
                         default:
                             logger.error("不支持的解码字段类型 "+typeSimpleName );

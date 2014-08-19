@@ -11,6 +11,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Random;
@@ -52,9 +54,11 @@ import java.util.Random;
  *             <td colspan="3" style="text-align:center">加密部分</td>
  *         </tr>
  *     </table>
+ *
  * */
 @Sharable
 public class EncryptEncoder extends MessageToByteEncoder<OutMessage>{
+    private static Logger logger= LoggerFactory.getLogger(EncryptEncoder.class);
     @Override
 	protected void encode(ChannelHandlerContext ctx, OutMessage msg, ByteBuf out)
 			throws Exception {
@@ -62,28 +66,28 @@ public class EncryptEncoder extends MessageToByteEncoder<OutMessage>{
 		buf.writeShort(msg.getCmd());
 		buf.writeByte(msg.getCode());
 		CustomBuf content=new ByteCustomBuf(buf);
-		msg.encode(content);
-		byte[] dst=new byte[buf.readableBytes()];
-		ISession session=(ISession)ctx.channel().attr(VarConst.SESSION_KEY).get();
-		Object isEncryptObject=session.getVar(VarConst.NEED_ENCRYPT);//是否需要加密
-		boolean isEncrypt=false;
-		if(isEncryptObject!=null){
-			isEncrypt=(Boolean)isEncryptObject;
-		}
-		buf.readBytes(dst);
-		int index=new Random().nextInt(256);//随机获取密码索引
-		if(isEncrypt){
-			List<Short> passports=(List<Short>)session.getVar(VarConst.PASSPORT);
-			short passport=passports.get(index);//根据索引获取密码
-			EncryptUtil.encode(dst, dst.length, EncryptUtil.KEY, passport);//加密
-		}
-		buf=Unpooled.buffer(dst.length+4);//开辟新Buff
-		buf.writeShort(dst.length+2);//写入包长度
-		buf.writeBoolean(isEncrypt);//写入加密标识
-		buf.writeByte(index);//写入密码索引
-		buf.writeBytes(dst);//写入dst
-		//logger.debug("Server Send :"+JSON.toJSONString(msg));
-		out.writeBytes(buf);
-	}
+        msg.encode(content);
+        byte[] dst=new byte[buf.readableBytes()];
+        ISession session=(ISession)ctx.channel().attr(VarConst.SESSION_KEY).get();
+        Object isEncryptObject=session.getVar(VarConst.NEED_ENCRYPT);//是否需要加密
+        boolean isEncrypt=false;
+        if(isEncryptObject!=null){
+            isEncrypt=(Boolean)isEncryptObject;
+        }
+        buf.readBytes(dst);
+        int index=new Random().nextInt(256);//随机获取密码索引
+        if(isEncrypt){
+            List<Short> passports=(List<Short>)session.getVar(VarConst.PASSPORT);
+            short passport=passports.get(index);//根据索引获取密码
+            EncryptUtil.encode(dst, dst.length, EncryptUtil.KEY, passport);//加密
+        }
+        buf=Unpooled.buffer(dst.length+4);//开辟新Buff
+        buf.writeShort(dst.length+2);//写入包长度
+        buf.writeBoolean(isEncrypt);//写入加密标识
+        buf.writeByte(index);//写入密码索引
+        buf.writeBytes(dst);//写入dst
+        //logger.debug("Server Send :"+JSON.toJSONString(msg));
+        out.writeBytes(buf);
 
+	}
 }

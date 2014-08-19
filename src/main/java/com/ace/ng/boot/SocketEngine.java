@@ -65,6 +65,8 @@ public class SocketEngine {
     }
     /**
      * 注册消息处理器
+     * @param cmd 指令ID
+     * @param handler 处理器Class
      * */
     public void registerHandler(short cmd,Class<? extends  MessageHandler> handler){
         tcpHandlerFactory.registerHandler(cmd,handler);
