@@ -13,8 +13,10 @@ NG-Socket的解码层采用Javassit动态更改代码，并且使用缓存等方
 
 ## 面向对象
 我们如果要写一个消息处理器会先实现继承SessionMessageHandler接口
-MessageHandler解码有两种方式
+MessageHandler解码有两种方式。
+
 1.重写decode方法,然后手动对每个属性赋值,在CustomBuf中封装了各种常见的解码接口，方便开发者使用。
+
     public class Handler0001 extends SessionMessageHandler {
         private String message;
         private int id;
