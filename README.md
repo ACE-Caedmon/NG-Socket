@@ -8,27 +8,49 @@ NG-Socket
 消息解码
 -----------------------------------
 ### 性能优化
-大多网络消息层的处理为了面向对象，会使用反射技术。但是，反射技术相对来说性能会比较低,在大规模并发环境下解码性能也是很关键的一步。NG-Socket的解码层采用Javassit动态更改代码，并且使用缓存等方法大大优化解码性能。
-同时在CustomBuf中封装了各种常见的解码接口，方便开发者使用。详情见doc 文档。
+大多网络消息层的处理为了面向对象，会使用反射技术。但是，反射技术相对来说性能会比较低,在大规模并发环境下解码性能也是很关键的一步。
+NG-Socket的解码层采用Javassit动态更改代码，并且使用缓存等方法大大优化解码性能。
+
 ## 面向对象
 我们如果要写一个消息处理器会先实现继承SessionMessageHandler接口
+MessageHandler解码有两种方式
+1.重写decode方法,然后手动对每个属性赋值,在CustomBuf中封装了各种常见的解码接口，方便开发者使用。
+    public class Handler0001 extends SessionMessageHandler {
+        private String message;
+        private int id;
+        @Override
+        public void decode(CustomBuf buf){
+            this.message=buf.readString();
+        }
 
-public class Handler0001 extends SessionMessageHandler {
-    private String message;
-
-    public void setMessage(String message) {
-        this.message = message;
+        @Override
+        public void excute(ISession playerOnline) {
+            System.out.println("Server recived:"+message);
+            Message001 message001=new Message001((short)1);
+            message001.setContent("content");
+            playerOnline.send(message001);
+        }
     }
+2.使用系统提供的自动解码
 
-    @Override
-    public void excute(ISession playerOnline) {
-        System.out.println("Server recived:"+message);
-        Message001 message001=new Message001((short)1);
-        message001.setContent("content");
-        playerOnline.send(message001);
+    public class Handler0001 extends SessionMessageHandler {
+        private String message;
+        @NotDecode
+        private int id;
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        @Override
+        public void excute(ISession playerOnline) {
+            System.out.println("Server recived:"+message);
+            Message001 message001=new Message001((short)1);
+            message001.setContent("content");
+            playerOnline.send(message001);
+        }
     }
-}
-在上述代码中，你甚至都不用实现decode方法,只需要一个String类型的属性增加set方法,框架就会自动帮你解码,去掉了buf.readString()这个过程。
+在上述代码中，不用重写decode,只需要对需要解码赋值的属性提供set方法,框架就会自动帮你解码。不需要解码的属性,加一个@NotDecode的标记就可以了。
+前提是定义类属性的顺序要跟消息包的顺序一致。
 线程模型
 -----------------------------------
 ###
