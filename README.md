@@ -10,8 +10,9 @@ NG-Socket
 ### 性能优化
 大多网络消息层的处理为了面向对象，会使用反射技术。但是，反射技术相对来说性能会比较低,在大规模并发环境下解码性能也是很关键的一步。NG-Socket的解码层采用Javassit动态更改代码，并且使用缓存等方法大大优化解码性能。
 同时在CustomBuf中封装了各种常见的解码接口，方便开发者使用。详情见doc 文档。
-### 面向对象
+## 面向对象
 我们如果要写一个消息处理器会先实现继承SessionMessageHandler接口
+
 public class Handler0001 extends SessionMessageHandler {
     private String message;
 
@@ -37,3 +38,8 @@ Netty本身是每个Socket连接对应一个线程，同一个客户端的请求
 模块扩展
 -----------------------------------
 想要新增一个系统模块非常简单,继承Extension类就可以了，然后在init方法中注册相关消息处理器。
+自定义事件
+-----------------------------------
+NG-Socket帮你设计定义事件触发模型,并且提供泛型支持，让你随心所欲的自定义事件模型,详细查看com.ace.ng.event包中的文档。
+
+简单实例demo在com.ace.ng.examples包中。
