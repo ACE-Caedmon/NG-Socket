@@ -5,10 +5,29 @@ NG-Socket
 网络协议 
 -----------------------------------  
 协议格式详细可以查看doc目录下对应的com.ace.ng.codec.encrypt.EncryptDecoder类的注释。
-网络消息解码性能本质性的提升
+消息解码
 -----------------------------------
+### 性能优化
 大多网络消息层的处理为了面向对象，会使用反射技术。但是，反射技术相对来说性能会比较低,在大规模并发环境下解码性能也是很关键的一步。NG-Socket的解码层采用Javassit动态更改代码，并且使用缓存等方法大大优化解码性能。
-同时在CustomBuf中封装了各种常见的解码接口，方便开发者使用。详情见API 文档。
+同时在CustomBuf中封装了各种常见的解码接口，方便开发者使用。详情见doc 文档。
+### 面向对象
+我们如果要写一个消息处理器会先实现继承SessionMessageHandler接口
+public class Handler0001 extends SessionMessageHandler {
+    private String message;
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public void excute(ISession playerOnline) {
+        System.out.println("Server recived:"+message);
+        Message001 message001=new Message001((short)1);
+        message001.setContent("content");
+        playerOnline.send(message001);
+    }
+}
+在上述代码中，你甚至都不用实现decode方法,只需要一个String类型的属性增加set方法,框架就会自动帮你解码,去掉了buf.readString()这个过程。
 线程模型
 -----------------------------------
 ###
