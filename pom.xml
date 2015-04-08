@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.jcwx</groupId>
             <artifactId>game_current</artifactId>
-            <version>1.1</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
