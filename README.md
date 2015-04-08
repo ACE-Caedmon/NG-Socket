@@ -12,12 +12,12 @@ NG-Socket
 NG-Socket的解码层采用Javassit动态更改字节码，并且使用缓存等方法大大优化解码性能。
 
 ### 面向对象
-我们如果要写一个消息处理器会先实现继承SessionMessageHandler接口
-MessageHandler解码有两种方式。
+我们如果要写一个消息处理器会先实现继承SessionCmdHandler接口
+CmdHandler解码有两种方式。
 
 1.重写decode方法,然后手动对每个属性赋值,在CustomBuf中封装了各种常见的解码接口，方便开发者使用。
 
-    public class Handler0001 extends SessionMessageHandler {
+    public class Handler0001 extends SessionCmdHandler {
         private String message;
         private int id;
         @Override
@@ -35,7 +35,7 @@ MessageHandler解码有两种方式。
     }
 2.使用系统提供的自动解码
 
-    public class Handler0001 extends SessionMessageHandler {
+    public class Handler0001 extends SessionCmdHandler {
         private String message;
         @NotDecode
         private int id;
@@ -56,8 +56,8 @@ MessageHandler解码有两种方式。
 三.线程模型
 -----------------------------------
 业务线程模型与Netty框架层的线程分离，互不干扰,依赖于我的另一个项目Game-Current。在本项目中,确保业务逻辑线程池不会对网络通信数据读取以及解码造成影响，提高并发度。
-Netty本身是每个Socket连接对应一个线程，同一个客户端的请求数据更改就不会出现线程安全方面的问题。Game-Current依然支持此模型，只是更进一层，你可以针对业务进行扩展，比如副本，每个副本中分配一个TaskSubmiter,
-在需要考虑线程安全的问题，统一使用TaskSubmiter进行任务调度。详细见Game-Current相关文档。
+Netty本身是每个Socket连接对应一个线程，同一个客户端的请求数据更改就不会出现线程安全方面的问题。Game-Current依然支持此模型，只是更进一层，你可以针对业务进行扩展，比如副本，每个副本中分配一个IActor,
+在需要考虑线程安全的问题，统一使用IActor进行任务调度。详细见Game-Current相关文档。
 四.模块扩展
 -----------------------------------
 想要新增一个系统模块非常简单,继承Extension类就可以了，然后在init方法中注册相关消息处理器。
