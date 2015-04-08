@@ -61,7 +61,7 @@ import java.util.Map;
  *     </table>
  * */
 public class EncryptDecoder extends ReplayingDecoder<Void>{
-	private Logger logger=LoggerFactory.getLogger(EncryptDecoder.class);
+	private static final Logger log =LoggerFactory.getLogger(EncryptDecoder.class);
 	private boolean incred=false;//是否已自增
     private TCPHandlerFactory handlerFactory;
     private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<Short,HandlerPropertySetter>(100);
@@ -75,73 +75,72 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
 	 * @param in 输入流
 	 * @param out 输出事件对象
 	 * */
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
 			List<Object> out) throws Exception {
 		short length=in.readShort();
-			int hasReadLength=0;
-			boolean isEncrypt=in.readBoolean();
-			hasReadLength+=1;
-			ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
-			byte entryptOffset=in.readByte();
-			hasReadLength+=1;
-			ByteBuf bufForDecode=Unpooled.buffer(length-hasReadLength);//用来缓存一条报文的ByteBuf
-			if(isEncrypt){
-				byte[] dst=new byte[length-hasReadLength];//存储包体
-				in.readBytes(dst);//读取包体内容
-				short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
-				List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
-				short passport=passportList.get(index);//得到密码
-				EncryptUtil.decode(dst, dst.length, EncryptUtil.KEY, passport);//解密
-				bufForDecode.writeBytes(dst);
-			}else{
-				bufForDecode.writeBytes(in,length-hasReadLength);
-			}
-			int ci=bufForDecode.readInt();//获取消息中的自增ID
-			if(session.containsVar(VarConst.INCREMENT)){//如果已存在自增ID
-				int si=(Integer)session.getVar(VarConst.INCREMENT);
-				if(ci==si){//判断客户端传送自增ID是否与服务器相等
-					if(!incred){
-						si=ci+1;//自增
-						session.setVar(VarConst.INCREMENT, si);
-						incred=true;
-					}
-				}else{
-					logger.error("自增ID不合法:ci ={},si={}",ci,si);
-					bufForDecode.skipBytes(bufForDecode.readableBytes());
-				}
-			}else{
-				session.setVar(VarConst.INCREMENT, ci + 1);
-				incred=true;
-			}
-			short cmd=bufForDecode.readShort();
-            CmdHandler<?> handler=handlerFactory.getHandler(cmd);
-            if(handler!=null){
-                try {
-                    CustomBuf contentBuf=new ByteCustomBuf(bufForDecode);//将ByteBuf作为构造参数传入自定义的装饰器
-                    HandlerPropertySetter propertySetter=getHandlerPropertySetter(cmd, handler);
-                    propertySetter.setHandlerProperties(contentBuf,handler);
-                    //handler.decode(contentBuf);
-                    if(bufForDecode.isReadable()){
-                        logger.warn("报文还有内容没有读取(cmd={},remain={}",cmd,bufForDecode.readableBytes());
-                    }
-                } catch (Exception e) {
-                    logger.error("解码异常(cmd = "+cmd+")",e);
-                    bufForDecode.skipBytes(bufForDecode.readableBytes());
-                }finally{
-                    incred=false;//一条消息处理完就把自增标识重置一次
-                    out.add(handler);
+        int hasReadLength=0;
+        boolean isEncrypt=in.readBoolean();
+        hasReadLength+=1;
+        ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+        byte entryptOffset=in.readByte();
+        hasReadLength+=1;
+        ByteBuf bufForDecode=Unpooled.buffer(length-hasReadLength);//用来缓存一条报文的ByteBuf
+        if(isEncrypt){
+            byte[] dst=new byte[length-hasReadLength];//存储包体
+            in.readBytes(dst);//读取包体内容
+            short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
+            List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
+            short passport=passportList.get(index);//得到密码
+            EncryptUtil.decode(dst, dst.length, EncryptUtil.KEY, passport);//解密
+            bufForDecode.writeBytes(dst);
+        }else{
+            bufForDecode.writeBytes(in,length-hasReadLength);
+        }
+        int ci=bufForDecode.readInt();//获取消息中的自增ID
+        if(session.containsVar(VarConst.INCREMENT)){//如果已存在自增ID
+            int si=(Integer)session.getVar(VarConst.INCREMENT);
+            if(ci==si){//判断客户端传送自增ID是否与服务器相等
+                if(!incred){
+                    si=ci+1;//自增
+                    session.setVar(VarConst.INCREMENT, si);
+                    incred=true;
                 }
             }else{
-                logger.error("未知指令:cmd ={},length={}",cmd,bufForDecode.readableBytes());
+                log.error("自增ID不合法:ci ={},si={}", ci, si);
                 bufForDecode.skipBytes(bufForDecode.readableBytes());
             }
+        }else{
+            session.setVar(VarConst.INCREMENT, ci + 1);
+            incred=true;
+        }
+        short cmd=bufForDecode.readShort();
+        CmdHandler<?> handler=handlerFactory.getHandler(cmd);
+        if(handler!=null){
+            try {
+                CustomBuf contentBuf=new ByteCustomBuf(bufForDecode);//将ByteBuf作为构造参数传入自定义的装饰器
+                HandlerPropertySetter propertySetter=getHandlerPropertySetter(cmd, handler);
+                propertySetter.setHandlerProperties(contentBuf,handler);
+                //handler.decode(contentBuf);
+                if(bufForDecode.isReadable()){
+                    log.warn("数据包内容未读完:cmd={},remain={}", cmd, bufForDecode.readableBytes());
+                }
+            } catch (Exception e) {
+                log.error("解码异常:cmd={}", cmd, e);
+                bufForDecode.skipBytes(bufForDecode.readableBytes());
+            }finally{
+                incred=false;//一条消息处理完就把自增标识重置一次
+                out.add(handler);
+            }
+        }else{
+            log.error("未知指令:cmd ={},length={}", cmd, bufForDecode.readableBytes());
+            bufForDecode.skipBytes(bufForDecode.readableBytes());
+        }
 
 
 	}
 
-    private HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler handler) throws  Exception{
+    private HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler<?> handler) throws  Exception{
         //构造HandlerPropertySetter
         HandlerPropertySetter handlerPropertySetter=handlerPropertySetterMap.get(cmd);
         if(handlerPropertySetter==null){
@@ -209,7 +208,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readToProtoBuf());");
                             break;
                         default:
-                            logger.error("不支持的解码字段类型 "+typeSimpleName );
+                            log.error("不支持的解码字段类型:{} " + typeSimpleName);
                             break;
                     }
                 }

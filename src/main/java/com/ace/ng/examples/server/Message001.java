@@ -22,6 +22,6 @@ public class Message001 extends WithCodeMessage{
 
     @Override
     public void encode(CustomBuf buf) {
-
+        buf.writeString(content);
     }
 }

@@ -8,7 +8,7 @@ import java.net.Socket;
  */
 public class Client {
     public static void main(String[] args) throws IOException {
-        Socket socket=new Socket("localhost",8000);
+        Socket socket=new Socket("127.0.0.1",8001);
         new Thread(new ClientHandler(socket)).start();
 
     }

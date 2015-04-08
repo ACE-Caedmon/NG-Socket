@@ -36,10 +36,10 @@ public class TCPHandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>>
             }
             //构造HandlerCreator
 			if(handlerCreator==null){
-				CtClass c=classPool.getAndRename(NoOpMessageHandlerCreator.class.getName(), "com.ace.ng.codec.MessageHandlerCreatorProxy$"+cmd);
+				CtClass c=classPool.getAndRename(NoOpMessageHandlerCreator.class.getName(), "com.ace.ng.codec.CmdHandlerCreatorProxy$"+cmd);
                 CtMethod m=c.getDeclaredMethod("create");
                 CtClass handlerClass=classPool.get(handlerClassName);
-                m.insertBefore("com.ace.ng.dispatch.message.MessageHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
+                m.insertBefore("com.ace.ng.dispatch.message.CmdHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
                 handlerCreator=(CmdHandlerCreator)c.toClass().newInstance();
                 handlerCreateorMap.put(cmd,handlerCreator);
             }

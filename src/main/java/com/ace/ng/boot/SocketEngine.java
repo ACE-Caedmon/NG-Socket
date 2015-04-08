@@ -36,7 +36,7 @@ public class SocketEngine {
      * 启动网络服务
      * */
     public void start(){
-        log.info("初始化启动服务器");
+        log.info("NG-Socket 初始化!");
         final EventLoopGroup bossGroup = new NioEventLoopGroup(settings.bossThreadSize);
         final EventLoopGroup workerGroup = new NioEventLoopGroup(settings.workerThreadSize);
         try {
@@ -54,7 +54,7 @@ public class SocketEngine {
             log.info("Socket package encrypt : {}", settings.encrypt);
             log.info("MessageFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
             log.info("TCP port :{}",settings.port);
-
+            log.info("NG-Socket 启动完毕!");
             //f.channel().closeFuture().sync();
         } catch (Exception e) {
             log.error("<<<<<<<网络服务启动异常>>>>>>", e);

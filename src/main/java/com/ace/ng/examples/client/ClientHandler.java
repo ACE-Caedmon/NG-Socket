@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.Charset;
 
 /**
  * Created by Administrator on 2014/6/9.
@@ -53,7 +54,7 @@ public class ClientHandler implements  Runnable{
 
     }
     private byte[] writeMessage(String content){
-        int contentLength=content.getBytes().length;
+        int contentLength=content.getBytes(Charset.forName("UTF-8")).length;
         short cmd=1;// 2个字节
         boolean encrypted=false;// 1个字节
         byte offset=0;//密码索引，1个字节,不加密的话传0就可以
