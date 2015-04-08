@@ -6,7 +6,7 @@ import com.ace.ng.codec.NotDecode;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.HandlerPropertySetter;
 import com.ace.ng.dispatch.NoOpHandlerPropertySetter;
-import com.ace.ng.dispatch.message.MessageHandler;
+import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.TCPHandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.utils.CommonUtils;
@@ -108,7 +108,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
 						incred=true;
 					}
 				}else{
-					logger.error("自增ID不合法( ci = "+ci+",si = "+si+")");
+					logger.error("自增ID不合法:ci ={},si={}",ci,si);
 					bufForDecode.skipBytes(bufForDecode.readableBytes());
 				}
 			}else{
@@ -116,7 +116,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
 				incred=true;
 			}
 			short cmd=bufForDecode.readShort();
-            MessageHandler<?> handler=handlerFactory.getHandler(cmd);
+            CmdHandler<?> handler=handlerFactory.getHandler(cmd);
             if(handler!=null){
                 try {
                     CustomBuf contentBuf=new ByteCustomBuf(bufForDecode);//将ByteBuf作为构造参数传入自定义的装饰器
@@ -124,7 +124,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                     propertySetter.setHandlerProperties(contentBuf,handler);
                     //handler.decode(contentBuf);
                     if(bufForDecode.isReadable()){
-                        logger.warn("报文还有内容没有读取(cmd ="+cmd+",remainLength = "+bufForDecode.readableBytes()+" )");
+                        logger.warn("报文还有内容没有读取(cmd={},remain={}",cmd,bufForDecode.readableBytes());
                     }
                 } catch (Exception e) {
                     logger.error("解码异常(cmd = "+cmd+")",e);
@@ -134,14 +134,14 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                     out.add(handler);
                 }
             }else{
-                logger.error("未知指令( cmd = "+cmd+",length = "+bufForDecode.readableBytes()+")");
+                logger.error("未知指令:cmd ={},length={}",cmd,bufForDecode.readableBytes());
                 bufForDecode.skipBytes(bufForDecode.readableBytes());
             }
 
 
 	}
 
-    private HandlerPropertySetter getHandlerPropertySetter(Short cmd,MessageHandler handler) throws  Exception{
+    private HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler handler) throws  Exception{
         //构造HandlerPropertySetter
         HandlerPropertySetter handlerPropertySetter=handlerPropertySetterMap.get(cmd);
         if(handlerPropertySetter==null){

@@ -29,7 +29,7 @@ public class PassportTable extends WithCodeMessage {
 					buf.writeShort(passport);
 				}	
 			}else{
-				logger.error("密码表内容长度不合法"+passports.size());
+				logger.error("密码表长度错误:length={}",passports.size());
 			}
 		}
 	

@@ -136,10 +136,6 @@ public class EncryptUtil {
 				pDest[iIndex] = (byte)(pDest[iIndex]^iKeySumValue);
 				pDest[iIndex] = (byte)(pDest[iIndex]^key.charAt(kIndex));
 				pDest[iIndex] = (byte)(pDest[iIndex] - iTextLen - iOffset);
-				
-//				pDest[iIndex] = pDest[iIndex] ^ iKeySumValue;
-//				pDest[iIndex] = pDest[iIndex] ^ szKey[kIndex];
-//				pDest[iIndex] = pDest[iIndex] - iTextLen + iOffset;
 
 				kIndex	 ++;
 				iTextLen --;

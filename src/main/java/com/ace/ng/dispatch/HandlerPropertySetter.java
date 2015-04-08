@@ -1,11 +1,11 @@
 package com.ace.ng.dispatch;
 
 import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.dispatch.message.MessageHandler;
+import com.ace.ng.dispatch.message.CmdHandler;
 
 /**
  * Created by Administrator on 2014/6/6.
  */
 public interface HandlerPropertySetter {
-    void setHandlerProperties(CustomBuf buf, MessageHandler handler);
+    void setHandlerProperties(CustomBuf buf, CmdHandler handler);
 }

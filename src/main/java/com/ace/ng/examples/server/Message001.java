@@ -1,5 +1,6 @@
 package com.ace.ng.examples.server;
 
+import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.WithCodeMessage;
 
 /**
@@ -17,5 +18,10 @@ public class Message001 extends WithCodeMessage{
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    @Override
+    public void encode(CustomBuf buf) {
+
     }
 }

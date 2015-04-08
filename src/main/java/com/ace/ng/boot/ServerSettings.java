@@ -1,15 +1,15 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.message.MessageTaskFactory;
-import com.ace.ng.impl.DefaultMessageTaskFactory;
+import com.ace.ng.dispatch.message.CmdTaskFactory;
+import com.ace.ng.impl.DefaultCmdTaskFactory;
 
 /**
  * Created by Chenlong on 2014/5/20.
  * TCP服务器启动配置信息类
  */
-public class TCPServerSettings {
+public class ServerSettings {
     /**TCP端口**/
-    public int port=8000;
+    public int port=8001;
     /**Netty层Boss类线程数**/
     public int bossThreadSize=5;
     /**Netty层Worker类线程数*/
@@ -20,9 +20,9 @@ public class TCPServerSettings {
     public boolean encrypt=false;
     /**
      * 应用层自定义扩展的MessageTaskFactory实现类
-     * @see com.ace.ng.dispatch.message.MessageTaskFactory
+     * @see CmdTaskFactory
      * */
-    public MessageTaskFactory messageTaskFactory=new DefaultMessageTaskFactory();
+    public CmdTaskFactory cmdTaskFactory =new DefaultCmdTaskFactory();
 
-    public static TCPServerSettings DEFAULT_INSTANCE=new TCPServerSettings();
+    public static ServerSettings DEFAULT_INSTANCE=new ServerSettings();
 }

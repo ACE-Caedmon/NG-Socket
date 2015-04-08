@@ -4,14 +4,15 @@
  * 该类负责一些系统事件处理，包括将Netty层消息转到自定义框架层进行处理
  * */
 package com.ace.ng.dispatch;
+
 import com.ace.ng.constant.VarConst;
-import com.ace.ng.dispatch.message.MessageHandler;
-import com.ace.ng.dispatch.message.MessageTask;
-import com.ace.ng.dispatch.message.MessageTaskFactory;
+import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.dispatch.message.CmdTask;
+import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
-import com.jcwx.frm.current.ITaskSubmiter;
+import com.jcwx.frm.current.IActor;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -19,10 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class MessageDispatcher extends SimpleChannelInboundHandler<MessageHandler<?>>{
-	private Logger logger= LoggerFactory.getLogger(MessageDispatcher.class);
-	private MessageTaskFactory<?> taskFactory;
-	public MessageDispatcher(MessageTaskFactory<?> taskFactory){
+public class CmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
+	private Logger logger= LoggerFactory.getLogger(CmdDispatcher.class);
+	private CmdTaskFactory<?> taskFactory;
+	public CmdDispatcher(CmdTaskFactory<?> taskFactory){
 		this.taskFactory=taskFactory;
 	}
     /**
@@ -33,10 +34,9 @@ public class MessageDispatcher extends SimpleChannelInboundHandler<MessageHandle
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		final ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
-        ITaskSubmiter submitter=taskFactory.getSubmiterService().createSubmiter();
-		session.setSubmiter(submitter);
-		submitter.execute(new Runnable() {
-
+        IActor actor=taskFactory.getActorManager().createActor();
+		session.setActor(actor);
+		actor.execute(new Runnable() {
             @Override
             public void run() {
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
@@ -51,26 +51,26 @@ public class MessageDispatcher extends SimpleChannelInboundHandler<MessageHandle
      * @param handler 用户自定义实现的MessageHandler
      * */
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, MessageHandler handler)
+	protected void channelRead0(ChannelHandlerContext ctx, CmdHandler handler)
 			throws Exception {
 		ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
-		MessageTask task=taskFactory.createMessageTask(session, handler);
-		session.getSubmiter().execute(task);
+		CmdTask task=taskFactory.createMessageTask(session, handler);
+		session.getActor().execute(task);
 	}
     /**
      * 连接创建时会调用此方法，此时会负责创建ISession,并且为ISession分配一个Submiter
-     * @see com.jcwx.frm.current.TaskSubmiter
+     * @see com.jcwx.frm.current.IActor
      * */
 	@Override
 	public void channelActive(final ChannelHandlerContext ctx) throws Exception {
 		final ISession session=new Session(ctx.channel());
-		session.setSubmiter(taskFactory.getSubmiterService().createSubmiter());
+		session.setActor(taskFactory.getActorManager().createActor());
 		Runnable runnable=()-> {
 				ctx.channel().attr(VarConst.SESSION_KEY).set(session);
 				SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
 				
 			};
-		session.getSubmiter().execute(runnable);
+		session.getActor().execute(runnable);
 	
 	}
     /**

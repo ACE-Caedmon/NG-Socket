@@ -1,8 +1,8 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.MessageDispatcher;
+import com.ace.ng.dispatch.CmdDispatcher;
 import com.ace.ng.dispatch.ServerChannelInitializer;
-import com.ace.ng.dispatch.message.MessageHandler;
+import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.TCPHandlerFactory;
 import com.ace.ng.handler.ValidateOKHandler;
 import com.ace.ng.session.SessionFire;
@@ -11,7 +11,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +23,11 @@ import java.util.Set;
  * 网络引擎核心启动类
  */
 public class SocketEngine {
-    private TCPServerSettings settings;
+    private ServerSettings settings;
     private TCPHandlerFactory tcpHandlerFactory;
     private Set<Extension> extensions;
-    private static Logger logger= LoggerFactory.getLogger(SocketEngine.class);
-    public SocketEngine(TCPServerSettings settings,TCPHandlerFactory tcpHandlerFactory){
+    private static final Logger log =LoggerFactory.getLogger(SocketEngine.class);
+    public SocketEngine(ServerSettings settings,TCPHandlerFactory tcpHandlerFactory){
         this.settings=settings;
         this.tcpHandlerFactory=tcpHandlerFactory;
         this.extensions=new HashSet<Extension>();
@@ -37,11 +36,11 @@ public class SocketEngine {
      * 启动网络服务
      * */
     public void start(){
-        logger.info("初始化网络服务");
+        log.info("初始化启动服务器");
         final EventLoopGroup bossGroup = new NioEventLoopGroup(settings.bossThreadSize);
         final EventLoopGroup workerGroup = new NioEventLoopGroup(settings.workerThreadSize);
         try {
-            MessageDispatcher dispatcher=new MessageDispatcher(settings.messageTaskFactory);
+            CmdDispatcher dispatcher=new CmdDispatcher(settings.cmdTaskFactory);
             ServerChannelInitializer initializer=new ServerChannelInitializer(dispatcher,tcpHandlerFactory);
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -49,10 +48,16 @@ public class SocketEngine {
                     .childHandler(initializer);
             // Bind and start to accept incoming connections.
             ChannelFuture f =  b.bind(settings.port).sync();
-            logger.info("TCP服务器已启动( port = "+settings.port+" )");
+            log.info("Boss thread : {}",settings.bossThreadSize);
+            log.info("Worker thread : {}",settings.workerThreadSize);
+            log.info("Logic thread:{}",settings.messageThreadSize);
+            log.info("Socket package encrypt : {}", settings.encrypt);
+            log.info("MessageFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
+            log.info("TCP port :{}",settings.port);
+
             //f.channel().closeFuture().sync();
         } catch (Exception e) {
-            logger.error("<<<<<<<网络服务启动异常>>>>>>",e);
+            log.error("<<<<<<<网络服务启动异常>>>>>>", e);
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
             return;
@@ -68,7 +73,7 @@ public class SocketEngine {
      * @param cmd 指令ID
      * @param handler 处理器Class
      * */
-    public void registerHandler(short cmd,Class<? extends  MessageHandler> handler){
+    public void registerHandler(short cmd,Class<? extends CmdHandler> handler){
         tcpHandlerFactory.registerHandler(cmd,handler);
     }
     /**
@@ -93,7 +98,7 @@ public class SocketEngine {
             }
         }
         extension.init();
-        Map<Short,Class> handlerMap=extension.getMessageHandlers();
+        Map<Short,Class> handlerMap=extension.getCmdHandlers();
         for(Map.Entry<Short,Class> entry:handlerMap.entrySet()){
             tcpHandlerFactory.registerHandler(entry.getKey(),entry.getValue());
         }

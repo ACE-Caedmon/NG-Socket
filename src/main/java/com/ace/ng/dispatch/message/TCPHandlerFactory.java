@@ -4,11 +4,9 @@ package com.ace.ng.dispatch.message;
  * @author Chenlong
  * */
 
-import com.ace.ng.dispatch.MessageHandlerCreator;
-import com.ace.ng.dispatch.MessageHandlerFactory;
-import com.ace.ng.dispatch.NoOpHandlerPropertySetter;
+import com.ace.ng.dispatch.CmdHandlerCreator;
+import com.ace.ng.dispatch.CmdHandlerFactory;
 import com.ace.ng.dispatch.NoOpMessageHandlerCreator;
-import com.ace.ng.codec.NotDecode;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,21 +14,21 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TCPHandlerFactory implements MessageHandlerFactory<Short,MessageHandler<?>> {
+public class TCPHandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>> {
 	private static Logger logger=LoggerFactory.getLogger(TCPHandlerFactory.class);
 	private Map<Short, String> messageHandlers;
 	private static TCPHandlerFactory instance=new TCPHandlerFactory();
-	private Map<Short, MessageHandlerCreator> handlerCreateorMap;
+	private Map<Short, CmdHandlerCreator> handlerCreateorMap;
 	private static ClassPool classPool=ClassPool.getDefault();
 	public TCPHandlerFactory(){
 		messageHandlers=new HashMap<Short, String>(100);
-		handlerCreateorMap=new HashMap<Short, MessageHandlerCreator>(100);
+		handlerCreateorMap=new HashMap<Short, CmdHandlerCreator>(100);
 
 	}
 
 	@Override
-	public MessageHandler<?> getHandler(Short cmd) {
-		MessageHandlerCreator handlerCreator=handlerCreateorMap.get(cmd);
+	public CmdHandler<?> getHandler(Short cmd) {
+		CmdHandlerCreator handlerCreator=handlerCreateorMap.get(cmd);
 		try {
             String handlerClassName=messageHandlers.get(cmd);
             if(handlerClassName==null){
@@ -42,11 +40,11 @@ public class TCPHandlerFactory implements MessageHandlerFactory<Short,MessageHan
                 CtMethod m=c.getDeclaredMethod("create");
                 CtClass handlerClass=classPool.get(handlerClassName);
                 m.insertBefore("com.ace.ng.dispatch.message.MessageHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
-                handlerCreator=(MessageHandlerCreator)c.toClass().newInstance();
+                handlerCreator=(CmdHandlerCreator)c.toClass().newInstance();
                 handlerCreateorMap.put(cmd,handlerCreator);
             }
 
-			MessageHandler<?> result=handlerCreator.create(cmd);
+			CmdHandler<?> result=handlerCreator.create(cmd);
 			return result;
 			
 		} catch (Exception e) {
@@ -58,7 +56,7 @@ public class TCPHandlerFactory implements MessageHandlerFactory<Short,MessageHan
 
 	@Override
 	public void registerHandler(Short cmd, Class<?> clazz) {
-		if(MessageHandler.class.isAssignableFrom(clazz)){
+		if(CmdHandler.class.isAssignableFrom(clazz)){
 			if(messageHandlers.containsKey(cmd)){
 				throw new IllegalArgumentException("消息指令已存在( cmd = "+cmd+",alreadyClass = "+messageHandlers.get(cmd)+",newClass = "+clazz.getName());
 			}

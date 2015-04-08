@@ -8,6 +8,6 @@ import com.ace.ng.boot.Extension;
 public class TestExtension extends Extension {
     @Override
     protected void init() {
-        registerMessageHandler((short)1,Handler0001.class);
+        regiterCmd(Handler0001.class);
     }
 }

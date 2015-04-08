@@ -11,7 +11,7 @@ import com.ace.ng.codec.InMessage;
  * */
 
 
-public abstract class MessageHandler<T> implements InMessage,IAction<T> {
+public abstract class CmdHandler<T> implements InMessage,IAction<T> {
 
     public void decode(CustomBuf data){
 

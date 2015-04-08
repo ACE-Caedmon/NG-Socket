@@ -8,14 +8,14 @@ package com.ace.ng.dispatch.message;
 
 import com.ace.ng.session.ISession;
 
-public abstract class MessageTask implements Runnable{
-	protected MessageHandler<?> handler;
+public abstract class CmdTask implements Runnable{
+	protected CmdHandler<?> handler;
 	protected ISession session;
-	public MessageTask(ISession session,MessageHandler<?> handler){
+	public CmdTask(ISession session, CmdHandler<?> handler){
 		this.handler=handler;
 		this.session=session;
 	}
-	public MessageHandler<?> getHandler() {
+	public CmdHandler<?> getHandler() {
 		return handler;
 	}
 	public ISession getSession() {

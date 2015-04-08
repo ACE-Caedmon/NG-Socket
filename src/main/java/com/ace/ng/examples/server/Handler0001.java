@@ -1,14 +1,14 @@
 package com.ace.ng.examples.server;
 
-import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.codec.WithCodeMessage;
-import com.ace.ng.impl.SessionMessageHandler;
+import com.ace.ng.dispatch.message.CmdAnnotation;
+import com.ace.ng.impl.SessionCmdHandler;
 import com.ace.ng.session.ISession;
 
 /**
  * Created by Administrator on 2014/6/9.
  */
-public class Handler0001 extends SessionMessageHandler {
+@CmdAnnotation(id=1,desc="≤‚ ‘”√")
+public class Handler0001 extends SessionCmdHandler {
     private String message;
 
     public void setMessage(String message) {

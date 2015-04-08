@@ -7,7 +7,7 @@ package com.ace.ng.session;
  * */
 
 import com.ace.ng.codec.OutMessage;
-import com.jcwx.frm.current.ITaskSubmiter;
+import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.Future;
@@ -28,7 +28,7 @@ public class Session implements ISession{
 	private long lastActiveTime;//最后活动时间
 	private volatile boolean active=true;
 	private Map<String, Object> varMap=new Hashtable<String, Object>();
-	private ITaskSubmiter submiter;
+	private IActor actor;
     private CountDownLatch closeCompleteLatch=new CountDownLatch(1);
     private static final long DEFAULT_CLOSE_TIME_OUT=2000;
 	private Lock lock=new ReentrantLock(true);
@@ -160,12 +160,12 @@ public class Session implements ISession{
 		// TODO Auto-generated method stub
 		return channel.writeAndFlush(message);
 	}
-	public ITaskSubmiter getSubmiter() {
-		return submiter;
+	public IActor getActor() {
+		return actor;
 	}
 
-	public void setSubmiter(ITaskSubmiter submiter){
-		this.submiter=submiter;
+	public void setActor(IActor actor){
+		this.actor=actor;
 	}
 
 

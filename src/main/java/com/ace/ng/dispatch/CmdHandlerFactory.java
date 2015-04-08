@@ -1,7 +1,7 @@
 package com.ace.ng.dispatch;
 
 
-public interface MessageHandlerFactory<K,H> {
+public interface CmdHandlerFactory<K,H> {
 	/**
 	 * 根据指令ID获取MessageHandler的实例化对象
 	 * @param cmd 指令ID
