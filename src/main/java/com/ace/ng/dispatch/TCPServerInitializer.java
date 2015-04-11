@@ -14,12 +14,12 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 @Sharable
-public class ServerChannelInitializer extends ChannelInitializer<SocketChannel>{
-	private CmdDispatcher cmdDispatcher;
+public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
+	private TCPCmdDispatcher TCPCmdDispatcher;
     private TCPHandlerFactory handlerFactory;
-	public ServerChannelInitializer(CmdDispatcher cmdDispatcher,TCPHandlerFactory handlerFactory){
+	public TCPServerInitializer(TCPCmdDispatcher TCPCmdDispatcher, TCPHandlerFactory handlerFactory){
 		this.handlerFactory=handlerFactory;
-        this.cmdDispatcher = cmdDispatcher;
+        this.TCPCmdDispatcher = TCPCmdDispatcher;
 	}
 	@Override
 	protected void initChannel(SocketChannel ch) throws Exception {
@@ -30,7 +30,7 @@ public class ServerChannelInitializer extends ChannelInitializer<SocketChannel>{
 		ch.pipeline().addLast(new ChannelEventHandler());
 		ch.pipeline().addLast(new EncryptDecoder(handlerFactory));
 		ch.pipeline().addLast(new EncryptEncoder());
-		ch.pipeline().addLast(cmdDispatcher);
+		ch.pipeline().addLast(TCPCmdDispatcher);
 		//ch.pipeline().addLast(new OutBoundDispatcher());
 		
 		

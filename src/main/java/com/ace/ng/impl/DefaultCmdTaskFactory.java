@@ -12,7 +12,10 @@ import com.jcwx.frm.current.QueueActorManager;
  * Created by Administrator on 2014/5/23.
  */
 public class DefaultCmdTaskFactory implements CmdTaskFactory<SessionCmdHandler> {
-    private IActorManager actorManager= new QueueActorManager(2,CurrentUtils.createThreadFactory("NG-Socket-"));
+    private IActorManager actorManager;
+    public DefaultCmdTaskFactory(int cmdThreadSize){
+        actorManager=new QueueActorManager(cmdThreadSize,CurrentUtils.createThreadFactory("NG-Socket-"));
+    }
     @Override
     public CmdTask createMessageTask(ISession session, CmdHandler<SessionCmdHandler> handler) {
         return new SessionCmdTask(session,handler);

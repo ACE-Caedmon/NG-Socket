@@ -20,10 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class CmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
-	private Logger logger= LoggerFactory.getLogger(CmdDispatcher.class);
+public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
+	private Logger logger= LoggerFactory.getLogger(TCPCmdDispatcher.class);
 	private CmdTaskFactory<?> taskFactory;
-	public CmdDispatcher(CmdTaskFactory<?> taskFactory){
+	public TCPCmdDispatcher(CmdTaskFactory<?> taskFactory){
 		this.taskFactory=taskFactory;
 	}
     /**
@@ -65,11 +65,13 @@ public class CmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
 	public void channelActive(final ChannelHandlerContext ctx) throws Exception {
 		final ISession session=new Session(ctx.channel());
 		session.setActor(taskFactory.getActorManager().createActor());
-		Runnable runnable=()-> {
+		Runnable runnable=new Runnable() {
+			@Override
+			public void run() {
 				ctx.channel().attr(VarConst.SESSION_KEY).set(session);
 				SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
-				
-			};
+			}
+		};
 		session.getActor().execute(runnable);
 	
 	}

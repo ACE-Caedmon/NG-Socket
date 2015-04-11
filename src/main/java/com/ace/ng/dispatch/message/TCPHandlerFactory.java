@@ -48,7 +48,7 @@ public class TCPHandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>>
 			return result;
 			
 		} catch (Exception e) {
-			logger.error("获取MessageHandler异常( cmd = "+cmd+")",e);
+			logger.error("获取CmdHandler异常( cmd = "+cmd+")",e);
             e.printStackTrace();
 		}
 		return null;

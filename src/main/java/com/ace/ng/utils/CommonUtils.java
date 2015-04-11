@@ -14,7 +14,7 @@ public class CommonUtils {
             if(!b){
                 continue;
             }
-            b=b&&(paramTypes.length==m.getParameterCount());
+            b=b&&(paramTypes.length==m.getParameterTypes().length);
             if(!b){
                 continue;
             }

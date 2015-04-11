@@ -15,14 +15,14 @@ public class ServerSettings {
     /**Netty层Worker类线程数*/
     public int workerThreadSize=10;
     /**Message处理线程池大小**/
-    public int messageThreadSize=10;
+    public int messageThreadSize =10;
     /**网络数据是否加密**/
     public boolean encrypt=false;
     /**
      * 应用层自定义扩展的MessageTaskFactory实现类
      * @see CmdTaskFactory
      * */
-    public CmdTaskFactory cmdTaskFactory =new DefaultCmdTaskFactory();
+    public CmdTaskFactory cmdTaskFactory =new DefaultCmdTaskFactory(messageThreadSize);
 
     public static ServerSettings DEFAULT_INSTANCE=new ServerSettings();
 }

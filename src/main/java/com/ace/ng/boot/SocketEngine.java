@@ -1,7 +1,7 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.CmdDispatcher;
-import com.ace.ng.dispatch.ServerChannelInitializer;
+import com.ace.ng.dispatch.TCPCmdDispatcher;
+import com.ace.ng.dispatch.TCPServerInitializer;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.TCPHandlerFactory;
 import com.ace.ng.handler.ValidateOKHandler;
@@ -40,8 +40,8 @@ public class SocketEngine {
         final EventLoopGroup bossGroup = new NioEventLoopGroup(settings.bossThreadSize);
         final EventLoopGroup workerGroup = new NioEventLoopGroup(settings.workerThreadSize);
         try {
-            CmdDispatcher dispatcher=new CmdDispatcher(settings.cmdTaskFactory);
-            ServerChannelInitializer initializer=new ServerChannelInitializer(dispatcher,tcpHandlerFactory);
+            TCPCmdDispatcher dispatcher=new TCPCmdDispatcher(settings.cmdTaskFactory);
+            TCPServerInitializer initializer=new TCPServerInitializer(dispatcher,tcpHandlerFactory);
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)

@@ -12,7 +12,6 @@ public class Server {
     public static void main(String[] args){
         PropertyConfigurator.configure("conf/log4j.properties");
         TCPHandlerFactory tcpHandlerFactory=new TCPHandlerFactory();
-        ServerSettings serverSettings=new ServerSettings();
         SocketEngine engine=new SocketEngine(ServerSettings.DEFAULT_INSTANCE,tcpHandlerFactory);
         engine.registerExtension(new TestExtension());
         engine.start();
