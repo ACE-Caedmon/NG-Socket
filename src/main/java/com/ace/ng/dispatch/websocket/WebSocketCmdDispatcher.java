@@ -1,15 +1,15 @@
-package com.ace.ng.dispatch;
+package com.ace.ng.dispatch.websocket;
 
-import com.ace.ng.codec.encrypt.EncryptUtil;
+import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.CmdTask;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
-import com.ace.ng.dispatch.message.TCPHandlerFactory;
+import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.jcwx.frm.current.IActor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -19,46 +19,36 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.CharsetUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
- * Created by Administrator on 2015/4/3.
+ * Created by ChenLong on 2015/4/3.
  */
-public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler{
+public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
 
     private static final String WEBSOCKET_PATH = "/websocket";
-
     private WebSocketServerHandshaker handshaker;
-    private CmdHandlerFactory<Short,? extends CmdHandler> handlerFactory;
+    private HandlerFactory handlerFactory;
     private CmdTaskFactory<?> taskFactory;
-    private static final Logger log= LoggerFactory.getLogger(WebSocketCmdDispatcher.class);
-    public WebSocketCmdDispatcher(TCPHandlerFactory handlerFactory){
+    public WebSocketCmdDispatcher(HandlerFactory handlerFactory,CmdTaskFactory<?> taskFactory){
+        this.taskFactory=taskFactory;
         this.handlerFactory=handlerFactory;
     }
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String address =ctx.channel().remoteAddress().toString();
-        super.channelActive(ctx);
+    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+        final ISession session=new Session(ctx.channel());
+        ctx.channel().attr(VarConst.SESSION_KEY).set(session);
+        SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
     }
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
-        final ISession session=new Session(ctx.channel());
-        session.setActor(taskFactory.getActorManager().createActor());
-        Runnable runnable=new Runnable(){
-            @Override
+        final ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+        session.getActor().execute(new Runnable() {
             public void run() {
-                ctx.channel().attr(VarConst.SESSION_KEY).set(session);
-                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
+                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
+                session.clear();
+                session.noticeCloseComplete();
             }
-        };
-        session.getActor().execute(runnable);
-    }
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
+        });
     }
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {
@@ -70,6 +60,9 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler{
             } catch (InvalidProtocolBufferException e) {
                 e.printStackTrace();
             }
+        }else if(msg instanceof CmdHandler){
+            ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+            taskFactory.executeCmd(session, (CmdHandler)msg);
         }
     }
     @Override
@@ -104,13 +97,19 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler{
             sendHttpResponse(ctx, req, res);
             return;
         }
-        // Handshake
+        handshake(ctx,req);
+
+    }
+    private void handshake(ChannelHandlerContext ctx,FullHttpRequest req){
         WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(getWebSocketLocation(req), null, false);
         handshaker = wsFactory.newHandshaker(req);
         if (handshaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
         } else {
             handshaker.handshake(ctx.channel(), req);
+            ctx.pipeline().addAfter("wsdecoder", "wspacketdecoder", new WebSocketPacketDecoder());
+            ctx.pipeline().addAfter("wspacketdecoder","encryptdecoder",new BinaryEncryptDecoder(handlerFactory));
+            ctx.pipeline().addBefore("wsencoder", "wspacketencoder", new WebSocketPacketEncoder());
         }
     }
     private static void sendHttpResponse(
@@ -133,7 +132,6 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler{
         return "ws://" + location;
     }
     private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) throws InvalidProtocolBufferException {
-
         if (frame instanceof CloseWebSocketFrame) {
             handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
             return;
@@ -142,55 +140,8 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler{
             ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
             return;
         }
-        if(frame instanceof BinaryWebSocketFrame) {
-            BinaryWebSocketFrame bw=(BinaryWebSocketFrame)frame;
-            ByteBuf in = bw.content();
-            boolean isEncrypt=in.readBoolean();
-            ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
-            byte entryptOffset=in.readByte();
-            ByteBuf bufForDecode=Unpooled.buffer(in.readableBytes() - 1);//用来缓存一条报文的ByteBuf
-            if(isEncrypt){
-                byte[] dst=new byte[in.readableBytes()-1];//存储包体
-                in.readBytes(dst);//读取包体内容
-                short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
-                List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
-                short passport=passportList.get(index);//得到密码
-                EncryptUtil.decode(dst, dst.length, EncryptUtil.KEY, passport);//解密
-                bufForDecode.writeBytes(dst);
-            }else{
-                bufForDecode.writeBytes(in,in.readableBytes()-1);
-            }
-            int ci=bufForDecode.readInt();//获取消息中的自增ID
-            if(session.containsVar(VarConst.INCREMENT)){//如果已存在自增ID
-                int si=(Integer)session.getVar(VarConst.INCREMENT);
-                if(ci==si){//判断客户端传送自增ID是否与服务器相等
-                    si=ci+1;//自增
-                    session.setVar(VarConst.INCREMENT, si);
-                }else{
-                    log.error("自增ID不合法:ci ={},si={}", ci, si);
-                    bufForDecode.skipBytes(bufForDecode.readableBytes());
-                }
-            }else{
-                session.setVar(VarConst.INCREMENT, ci + 1);
-            }
-            short cmd=bufForDecode.readShort();
-            CmdHandler handler=handlerFactory.getHandler(cmd);
-            CmdTask task=taskFactory.createMessageTask(session, handler);
-            session.getActor().execute(task);
-            return;
-        }
-//        if (frame instanceof PongWebSocketFrame) {
-//            BinaryWebSocketFrame request = ((BinaryWebSocketFrame) frame).text();
-//            ctx.channel().write(new ByteBuf(request.toUpperCase()));
-//            return;
-//        }
+
         throw new UnsupportedOperationException(String.format("%s frame types not supported", frame.getClass().getName()));
     }
 
-
-
-    public static void main(String[] args) {
-
-
-    }
 }

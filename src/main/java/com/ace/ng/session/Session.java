@@ -30,7 +30,6 @@ public class Session implements ISession{
 	private Map<String, Object> varMap=new Hashtable<String, Object>();
 	private IActor actor;
     private CountDownLatch closeCompleteLatch=new CountDownLatch(1);
-    private static final long DEFAULT_CLOSE_TIME_OUT=2000;
 	private Lock lock=new ReentrantLock(true);
     private static Logger logger= LoggerFactory.getLogger(Session.class);
 	public Session(Channel channel){

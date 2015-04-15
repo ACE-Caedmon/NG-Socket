@@ -1,6 +1,7 @@
-package com.ace.ng.dispatch;
+package com.ace.ng.dispatch.javassit;
 
 
+import com.ace.ng.dispatch.javassit.CmdHandlerCreator;
 import com.ace.ng.dispatch.message.CmdHandler;
 
 /**

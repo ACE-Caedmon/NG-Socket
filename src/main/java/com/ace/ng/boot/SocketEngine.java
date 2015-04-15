@@ -1,21 +1,24 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.TCPCmdDispatcher;
-import com.ace.ng.dispatch.TCPServerInitializer;
+import com.ace.ng.dispatch.message.CmdAnnotation;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.TCPHandlerFactory;
+import com.ace.ng.dispatch.message.HandlerFactory;
+import com.ace.ng.dispatch.tcp.TCPServerInitializer;
+import com.ace.ng.dispatch.websocket.WebSocketServerInitalizer;
 import com.ace.ng.handler.ValidateOKHandler;
 import com.ace.ng.session.SessionFire;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,12 +27,13 @@ import java.util.Set;
  */
 public class SocketEngine {
     private ServerSettings settings;
-    private TCPHandlerFactory tcpHandlerFactory;
+    private HandlerFactory handlerFactory;
     private Set<Extension> extensions;
     private static final Logger log =LoggerFactory.getLogger(SocketEngine.class);
-    public SocketEngine(ServerSettings settings,TCPHandlerFactory tcpHandlerFactory){
+    private static final String TCP_PROTOCOL="tcp",WEB_SOCKET_PROTOCOL="websocket";
+    public SocketEngine(ServerSettings settings,HandlerFactory handlerFactory){
         this.settings=settings;
-        this.tcpHandlerFactory=tcpHandlerFactory;
+        this.handlerFactory = handlerFactory;
         this.extensions=new HashSet<Extension>();
     }
     /**
@@ -40,20 +44,28 @@ public class SocketEngine {
         final EventLoopGroup bossGroup = new NioEventLoopGroup(settings.bossThreadSize);
         final EventLoopGroup workerGroup = new NioEventLoopGroup(settings.workerThreadSize);
         try {
-            TCPCmdDispatcher dispatcher=new TCPCmdDispatcher(settings.cmdTaskFactory);
-            TCPServerInitializer initializer=new TCPServerInitializer(dispatcher,tcpHandlerFactory);
+            ChannelInitializer<SocketChannel> initializer=null;
+            switch (settings.protocol.toLowerCase()){
+                case TCP_PROTOCOL:
+                    initializer=new TCPServerInitializer(handlerFactory,settings.cmdTaskFactory);
+                    break;
+                case WEB_SOCKET_PROTOCOL:
+                    initializer=new WebSocketServerInitalizer(handlerFactory,settings.cmdTaskFactory);
+                    break;
+            }
+
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(initializer);
-            // Bind and start to accept incoming connections.
             ChannelFuture f =  b.bind(settings.port).sync();
+            log.info("Protocol type: {}",settings.protocol);
             log.info("Boss thread : {}",settings.bossThreadSize);
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.messageThreadSize);
             log.info("Socket package encrypt : {}", settings.encrypt);
             log.info("MessageFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
-            log.info("TCP port :{}",settings.port);
+            log.info("Socket port :{}",settings.port);
             log.info("NG-Socket 启动完毕!");
             //f.channel().closeFuture().sync();
         } catch (Exception e) {
@@ -73,8 +85,8 @@ public class SocketEngine {
      * @param cmd 指令ID
      * @param handler 处理器Class
      * */
-    public void registerHandler(short cmd,Class<? extends CmdHandler> handler){
-        tcpHandlerFactory.registerHandler(cmd,handler);
+    public void registerHandler(short cmd,Class<? extends CmdHandler<?>> handler){
+        handlerFactory.registerHandler(cmd, handler);
     }
     /**
      * 停止网络服务
@@ -84,7 +96,7 @@ public class SocketEngine {
             extension.destory();
         }
         extensions.clear();
-        tcpHandlerFactory.destory();
+        handlerFactory.destory();
         extensions.clear();
     }
     /**
@@ -98,9 +110,13 @@ public class SocketEngine {
             }
         }
         extension.init();
-        Map<Short,Class> handlerMap=extension.getCmdHandlers();
-        for(Map.Entry<Short,Class> entry:handlerMap.entrySet()){
-            tcpHandlerFactory.registerHandler(entry.getKey(),entry.getValue());
+        List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
+        for(Class c:classes){
+            CmdAnnotation annotation= (CmdAnnotation) c.getAnnotation(CmdAnnotation.class);
+            if(annotation==null){
+                throw new NullPointerException("Class has no CmdAnnotation:"+c.getName());
+            }
+            handlerFactory.registerHandler(annotation.id(), c);
         }
 
     }

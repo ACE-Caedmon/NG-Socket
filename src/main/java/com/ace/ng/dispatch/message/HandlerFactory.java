@@ -4,9 +4,9 @@ package com.ace.ng.dispatch.message;
  * @author Chenlong
  * */
 
-import com.ace.ng.dispatch.CmdHandlerCreator;
+import com.ace.ng.dispatch.javassit.CmdHandlerCreator;
 import com.ace.ng.dispatch.CmdHandlerFactory;
-import com.ace.ng.dispatch.NoOpMessageHandlerCreator;
+import com.ace.ng.dispatch.javassit.NoOpMessageHandlerCreator;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +14,12 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TCPHandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>> {
-	private static Logger logger=LoggerFactory.getLogger(TCPHandlerFactory.class);
+public class HandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>> {
+	private static Logger logger=LoggerFactory.getLogger(HandlerFactory.class);
 	private Map<Short, String> messageHandlers;
-	private static TCPHandlerFactory instance=new TCPHandlerFactory();
 	private Map<Short, CmdHandlerCreator> handlerCreateorMap;
 	private static ClassPool classPool=ClassPool.getDefault();
-	public TCPHandlerFactory(){
+	public HandlerFactory(){
 		messageHandlers=new HashMap<Short, String>(100);
 		handlerCreateorMap=new HashMap<Short, CmdHandlerCreator>(100);
 
@@ -62,7 +61,7 @@ public class TCPHandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>>
 			}
 			messageHandlers.put(cmd, clazz.getName());
 		}else{
-			throw new IllegalArgumentException("消息处理器类必须实现MessageHandler接口 ( cmd = "+cmd+",class = "+clazz.getName()+")");
+			throw new IllegalArgumentException("消息处理器类必须实现CmdHandler接口 ( cmd = "+cmd+",class = "+clazz.getName()+")");
 		}	
 		
 	}

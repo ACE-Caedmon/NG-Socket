@@ -3,17 +3,19 @@ package com.ace.ng.codec.encrypt;
 import com.ace.ng.codec.ByteCustomBuf;
 import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.NotDecode;
+import com.ace.ng.codec.binary.BinaryEncryptUtil;
+import com.ace.ng.codec.binary.BinaryPacket;
 import com.ace.ng.constant.VarConst;
-import com.ace.ng.dispatch.HandlerPropertySetter;
-import com.ace.ng.dispatch.NoOpHandlerPropertySetter;
+import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
+import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.TCPHandlerFactory;
+import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.utils.CommonUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.handler.codec.MessageToMessageDecoder;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,42 +62,43 @@ import java.util.Map;
  *         </tr>
  *     </table>
  * */
-public class EncryptDecoder extends ReplayingDecoder<Void>{
-	private static final Logger log =LoggerFactory.getLogger(EncryptDecoder.class);
+public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> {
+	private static final Logger log =LoggerFactory.getLogger(BinaryEncryptDecoder.class);
 	private boolean incred=false;//是否已自增
-    private TCPHandlerFactory handlerFactory;
+    private HandlerFactory handlerFactory;
     private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<Short,HandlerPropertySetter>(100);
     private static ClassPool classPool=ClassPool.getDefault();
-    public EncryptDecoder(TCPHandlerFactory handlerFactory){
+    public BinaryEncryptDecoder(HandlerFactory handlerFactory){
         this.handlerFactory=handlerFactory;
     }
 	/**
      * 负责对数据包进行解码
 	 * @param ctx 对应Channel的上下文
-	 * @param in 输入流
+	 * @param packet 数据包
 	 * @param out 输出事件对象
 	 * */
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
+	protected void decode(ChannelHandlerContext ctx, BinaryPacket packet,
 			List<Object> out) throws Exception {
-		short length=in.readShort();
+        ByteBuf content=packet.getContent();
+		short length=(short)content.readableBytes();
         int hasReadLength=0;
-        boolean isEncrypt=in.readBoolean();
+        boolean isEncrypt=content.readBoolean();
         hasReadLength+=1;
         ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
-        byte entryptOffset=in.readByte();
+        byte entryptOffset=content.readByte();
         hasReadLength+=1;
         ByteBuf bufForDecode=Unpooled.buffer(length-hasReadLength);//用来缓存一条报文的ByteBuf
         if(isEncrypt){
             byte[] dst=new byte[length-hasReadLength];//存储包体
-            in.readBytes(dst);//读取包体内容
+            content.readBytes(dst);//读取包体内容
             short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
             List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
             short passport=passportList.get(index);//得到密码
-            EncryptUtil.decode(dst, dst.length, EncryptUtil.KEY, passport);//解密
+            BinaryEncryptUtil.decode(dst, dst.length, BinaryEncryptUtil.KEY, passport);//解密
             bufForDecode.writeBytes(dst);
         }else{
-            bufForDecode.writeBytes(in,length-hasReadLength);
+            bufForDecode.writeBytes(content,length-hasReadLength);
         }
         int ci=bufForDecode.readInt();//获取消息中的自增ID
         if(session.containsVar(VarConst.INCREMENT)){//如果已存在自增ID
@@ -136,7 +139,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
             log.error("未知指令:cmd ={},length={}", cmd, bufForDecode.readableBytes());
             bufForDecode.skipBytes(bufForDecode.readableBytes());
         }
-
+        bufForDecode.release();
 
 	}
 
@@ -208,8 +211,7 @@ public class EncryptDecoder extends ReplayingDecoder<Void>{
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readToProtoBuf());");
                             break;
                         default:
-                            log.error("不支持的解码字段类型:{} " + typeSimpleName);
-                            break;
+                            throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
                     }
                 }
             }

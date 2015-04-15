@@ -4,13 +4,15 @@ package com.ace.ng.codec.encrypt;
 import com.ace.ng.codec.ByteCustomBuf;
 import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.OutMessage;
+import com.ace.ng.codec.binary.BinaryEncryptUtil;
+import com.ace.ng.codec.binary.BinaryPacket;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.session.ISession;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.codec.MessageToMessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +59,10 @@ import java.util.Random;
  *
  * */
 @Sharable
-public class EncryptEncoder extends MessageToByteEncoder<OutMessage>{
-    private static Logger logger= LoggerFactory.getLogger(EncryptEncoder.class);
+public class BinaryEncryptEncoder extends MessageToMessageEncoder<OutMessage> {
+    private static Logger logger= LoggerFactory.getLogger(BinaryEncryptEncoder.class);
     @Override
-	protected void encode(ChannelHandlerContext ctx, OutMessage msg, ByteBuf out)
+	protected void encode(ChannelHandlerContext ctx, OutMessage msg, List<Object> out)
 			throws Exception {
 		ByteBuf buf=Unpooled.buffer();
 		buf.writeShort(msg.getCmd());
@@ -68,7 +70,7 @@ public class EncryptEncoder extends MessageToByteEncoder<OutMessage>{
 		CustomBuf content=new ByteCustomBuf(buf);
         msg.encode(content);
         byte[] dst=new byte[buf.readableBytes()];
-        ISession session=(ISession)ctx.channel().attr(VarConst.SESSION_KEY).get();
+        ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
         Object isEncryptObject=session.getVar(VarConst.NEED_ENCRYPT);//是否需要加密
         boolean isEncrypt=false;
         if(isEncryptObject!=null){
@@ -79,15 +81,15 @@ public class EncryptEncoder extends MessageToByteEncoder<OutMessage>{
         if(isEncrypt){
             List<Short> passports=(List<Short>)session.getVar(VarConst.PASSPORT);
             short passport=passports.get(index);//根据索引获取密码
-            EncryptUtil.encode(dst, dst.length, EncryptUtil.KEY, passport);//加密
+            BinaryEncryptUtil.encode(dst, dst.length, BinaryEncryptUtil.KEY, passport);//加密
         }
         buf=Unpooled.buffer(dst.length+4);//开辟新Buff
-        buf.writeShort(dst.length+2);//写入包长度
+        //buf.writeShort(dst.length + 2);//写入包长度
         buf.writeBoolean(isEncrypt);//写入加密标识
         buf.writeByte(index);//写入密码索引
         buf.writeBytes(dst);//写入dst
-        //logger.debug("Server Send :"+JSON.toJSONString(msg));
-        out.writeBytes(buf);
+        BinaryPacket packet=new BinaryPacket(buf);
+        out.add(packet);
 
 	}
 }

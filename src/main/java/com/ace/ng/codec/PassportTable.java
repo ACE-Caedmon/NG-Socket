@@ -1,7 +1,5 @@
-package com.ace.ng.codec.encrypt;
+package com.ace.ng.codec;
 
-import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.codec.WithCodeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

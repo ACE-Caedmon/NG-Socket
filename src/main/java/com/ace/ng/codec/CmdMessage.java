@@ -4,5 +4,5 @@ package com.ace.ng.codec;
  * 指令消息
  * */
 public interface CmdMessage {
-	public short getCmd();
+	short getCmd();
 }

@@ -15,10 +15,10 @@ public class Handler0001 extends SessionCmdHandler {
     }
 
     @Override
-    public void excute(ISession playerOnline) {
+    public void excute(ISession user) {
         System.out.println("接受到客户端消息:"+message);
         Message001 message001=new Message001((short)1);
         message001.setContent("服务端回发消息");
-        playerOnline.send(message001);
+        user.send(message001);
     }
 }

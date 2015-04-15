@@ -1,5 +1,5 @@
 
-package com.ace.ng.dispatch;
+package com.ace.ng.dispatch.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

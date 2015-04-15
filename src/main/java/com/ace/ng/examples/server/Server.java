@@ -2,7 +2,7 @@ package com.ace.ng.examples.server;
 
 import com.ace.ng.boot.SocketEngine;
 import com.ace.ng.boot.ServerSettings;
-import com.ace.ng.dispatch.message.TCPHandlerFactory;
+import com.ace.ng.dispatch.message.HandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
 
 /**
@@ -11,8 +11,11 @@ import org.apache.log4j.PropertyConfigurator;
 public class Server {
     public static void main(String[] args){
         PropertyConfigurator.configure("conf/log4j.properties");
-        TCPHandlerFactory tcpHandlerFactory=new TCPHandlerFactory();
-        SocketEngine engine=new SocketEngine(ServerSettings.DEFAULT_INSTANCE,tcpHandlerFactory);
+        HandlerFactory handlerFactory =new HandlerFactory();
+        ServerSettings settings=ServerSettings.DEFAULT_INSTANCE;
+        settings.protocol=ServerSettings.WEBSOCKET_PROTOCOL;
+        settings.port=8001;
+        SocketEngine engine=new SocketEngine(settings, handlerFactory);
         engine.registerExtension(new TestExtension());
         engine.start();
     }

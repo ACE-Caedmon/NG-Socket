@@ -1,10 +1,10 @@
-package com.ace.ng.codec.encrypt;
+package com.ace.ng.codec.binary;
 
 import java.util.*;
 
 
-public class EncryptUtil {
-	public static final String KEY = "jcwx";
+public class BinaryEncryptUtil {
+	public static final String KEY = "xiaotong";
 	/**
 	 *
 	 * @param passBody passBody

@@ -1,8 +1,8 @@
 package com.ace.ng.handler;
 
 
-import com.ace.ng.codec.encrypt.EncryptUtil;
-import com.ace.ng.codec.encrypt.PassportTable;
+import com.ace.ng.codec.binary.BinaryEncryptUtil;
+import com.ace.ng.codec.PassportTable;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.event.IEventHandler;
 import com.ace.ng.session.ISession;
@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 public class ValidateOKHandler implements IEventHandler<ISession> {
 	@Override
 	public void handleEvent(ISession session) {
-		List<Short> passports= EncryptUtil.getPassBody();
+		List<Short> passports= BinaryEncryptUtil.getPassBody();
 		//session.setVar(VarConst.INCREMENT, new AtomicInteger(passports.get(0)));
 		session.setVar(VarConst.PASSPORT, passports);
 		PassportTable passportMessage=new PassportTable((short)-1,(byte)0);
