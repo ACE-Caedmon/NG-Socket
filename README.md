@@ -18,16 +18,16 @@ CmdHandler解码有两种方式。
 1.重写decode方法,然后手动对每个属性赋值,在CustomBuf中封装了各种常见的解码接口，方便开发者使用。
 
     public class Handler0001 extends SessionCmdHandler {
-        private String message;
+        private String content;
         private int id;
         @Override
         public void decode(CustomBuf buf){
-            this.message=buf.readString();
+            this.content=buf.readString();
         }
 
         @Override
         public void excute(ISession playerOnline) {
-            System.out.println("Server recived:"+message);
+            System.out.println("Server recived:"+content);
             Message001 message001=new Message001((short)1);
             message001.setContent("content");
             playerOnline.send(message001);
@@ -36,16 +36,16 @@ CmdHandler解码有两种方式。
 2.使用系统提供的自动解码
 
     public class Handler0001 extends SessionCmdHandler {
-        private String message;
+        private String content;
         @NotDecode
         private int id;
-        public void setMessage(String message) {
-            this.message = message;
+        public void setMessage(String content) {
+            this.content = content;
         }
 
         @Override
         public void excute(ISession playerOnline) {
-            System.out.println("Server recived:"+message);
+            System.out.println("Server recived:"+content);
             Message001 message001=new Message001((short)1);
             message001.setContent("content");
             playerOnline.send(message001);

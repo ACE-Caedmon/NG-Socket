@@ -112,6 +112,7 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
             }else{
                 log.error("自增ID不合法:ci ={},si={}", ci, si);
                 bufForDecode.skipBytes(bufForDecode.readableBytes());
+                return;
             }
         }else{
             session.setVar(VarConst.INCREMENT, ci + 1);

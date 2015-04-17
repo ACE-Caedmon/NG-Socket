@@ -11,16 +11,11 @@ import java.util.List;
 /**
  * Created by Administrator on 2015/4/14.
  */
-public class WebSocketPacketEncoder extends MessageToMessageEncoder<SocketPacket> {
+public class WebSocketPacketEncoder extends MessageToMessageEncoder<BinaryPacket> {
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, SocketPacket packet, List<Object> out) throws Exception {
-        if(packet instanceof BinaryPacket){
-            BinaryWebSocketFrame frame=new BinaryWebSocketFrame(((BinaryPacket)packet).getContent());
-            out.add(frame);
-        }else{
-            throw new UnsupportedOperationException("Only support BinaryWebSocketFrame");
-        }
-
+    protected void encode(ChannelHandlerContext ctx, BinaryPacket packet, List<Object> out) throws Exception {
+        BinaryWebSocketFrame frame=new BinaryWebSocketFrame(packet.getContent());
+        out.add(frame);
     }
 }

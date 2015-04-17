@@ -1,6 +1,7 @@
 package com.ace.ng.dispatch.websocket;
 
 import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
+import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
@@ -36,8 +37,14 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=new Session(ctx.channel());
-        ctx.channel().attr(VarConst.SESSION_KEY).set(session);
-        SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
+        taskFactory.executeCmd(session, new CmdHandler() {
+            @Override
+            public void excute(Object user) {
+                ctx.channel().attr(VarConst.SESSION_KEY).set(session);
+                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
+            }
+        });
+
     }
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
@@ -107,9 +114,12 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
         } else {
             handshaker.handshake(ctx.channel(), req);
-            ctx.pipeline().addAfter("wsdecoder", "wspacketdecoder", new WebSocketPacketDecoder());
-            ctx.pipeline().addAfter("wspacketdecoder","encryptdecoder",new BinaryEncryptDecoder(handlerFactory));
-            ctx.pipeline().addBefore("wsencoder", "wspacketencoder", new WebSocketPacketEncoder());
+            ctx.pipeline().addAfter("wsdecoder", "decoder1", new WebSocketPacketDecoder());
+            ctx.pipeline().addAfter("decoder1", "decoder2", new BinaryEncryptDecoder(handlerFactory));
+            ctx.pipeline().addAfter("wsencoder", "encoder2", new WebSocketPacketEncoder());
+            ctx.pipeline().addAfter("encoder2", "encoder1", new BinaryEncryptEncoder());
+
+
         }
     }
     private static void sendHttpResponse(

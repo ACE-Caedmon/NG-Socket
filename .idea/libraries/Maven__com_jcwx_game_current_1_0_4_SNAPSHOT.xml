@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.jcwx:game_current:1.0.4-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/jcwx/game_current/1.0.4-SNAPSHOT/game_current-1.0.4-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/jcwx/game_current/1.0.4-SNAPSHOT/game_current-1.0.4-SNAPSHOT-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/jcwx/game_current/1.0.4-SNAPSHOT/game_current-1.0.4-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

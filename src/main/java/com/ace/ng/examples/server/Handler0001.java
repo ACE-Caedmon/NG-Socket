@@ -9,16 +9,38 @@ import com.ace.ng.session.ISession;
  */
 @CmdAnnotation(id=1,desc="测试用")
 public class Handler0001 extends SessionCmdHandler {
-    private String message;
-    public void setMessage(String message) {
-        this.message = message;
+    private int number;
+    private short id;
+    private String content;
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public void setNumber(int number) {
+        this.number = number;
+    }
+
+    public short getId() {
+        return id;
+    }
+
+    public void setId(short id) {
+        this.id = id;
+    }
+
+    public String getContent() {
+        return content;
     }
 
     @Override
     public void excute(ISession user) {
-        System.out.println("接受到客户端消息:"+message);
+        System.out.println("接受到客户端消息:"+number+","+id+","+ content);
         Message001 message001=new Message001((short)1);
-        message001.setContent("服务端回发消息");
+        message001.setContent("Message from Server");
         user.send(message001);
     }
 }

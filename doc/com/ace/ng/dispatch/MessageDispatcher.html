@@ -107,7 +107,7 @@ var activeTableTab = "activeTableTab";
 <li>io.netty.channel.ChannelInboundHandlerAdapter</li>
 <li>
 <ul class="inheritance">
-<li>io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/message/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</li>
+<li>io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/content/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</li>
 <li>
 <ul class="inheritance">
 <li>com.ace.ng.dispatch.CmdDispatcher</li>
@@ -131,7 +131,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>@ChannelHandler.Sharable
 public class <span class="typeNameLabel">MessageDispatcher</span>
-extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/message/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</pre>
+extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/content/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</pre>
 </li>
 </ul>
 </div>
@@ -165,7 +165,7 @@ extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com
 <th class="colOne" scope="col">构造器和说明</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/ace/ng/dispatch/MessageDispatcher.html#MessageDispatcher-com.ace.ng.dispatch.message.MessageTaskFactory-">MessageDispatcher</a></span>(<a href="../../../../com/ace/ng/dispatch/message/MessageTaskFactory.html" title="com.ace.ng.dispatch.message中的接口">MessageTaskFactory</a>&lt;?&gt;&nbsp;taskFactory)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/ace/ng/dispatch/MessageDispatcher.html#MessageDispatcher-com.ace.ng.dispatch.content.MessageTaskFactory-">MessageDispatcher</a></span>(<a href="../../../../com/ace/ng/dispatch/content/MessageTaskFactory.html" title="com.ace.ng.dispatch.message中的接口">MessageTaskFactory</a>&lt;?&gt;&nbsp;taskFactory)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -197,8 +197,8 @@ extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/ace/ng/dispatch/MessageDispatcher.html#channelRead0-io.netty.channel.ChannelHandlerContext-com.ace.ng.dispatch.message.MessageHandler-">channelRead0</a></span>(io.netty.channel.ChannelHandlerContext&nbsp;ctx,
-            <a href="../../../../com/ace/ng/dispatch/message/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&nbsp;handler)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/ace/ng/dispatch/MessageDispatcher.html#channelRead0-io.netty.channel.ChannelHandlerContext-com.ace.ng.dispatch.content.MessageHandler-">channelRead0</a></span>(io.netty.channel.ChannelHandlerContext&nbsp;ctx,
+            <a href="../../../../com/ace/ng/dispatch/content/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&nbsp;handler)</code>
 <div class="block">有客户端数据发送到服务端时会调用此方法，负责创建MessageTask独享，提交给自定义线程池处理业务逻辑。</div>
 </td>
 </tr>
@@ -259,13 +259,13 @@ extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com
 <!--   -->
 </a>
 <h3>构造器详细资料</h3>
-<a name="MessageDispatcher-com.ace.ng.dispatch.message.MessageTaskFactory-">
+<a name="MessageDispatcher-com.ace.ng.dispatch.content.MessageTaskFactory-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>MessageDispatcher</h4>
-<pre>public&nbsp;MessageDispatcher(<a href="../../../../com/ace/ng/dispatch/message/MessageTaskFactory.html" title="com.ace.ng.dispatch.message中的接口">MessageTaskFactory</a>&lt;?&gt;&nbsp;taskFactory)</pre>
+<pre>public&nbsp;MessageDispatcher(<a href="../../../../com/ace/ng/dispatch/content/MessageTaskFactory.html" title="com.ace.ng.dispatch.message中的接口">MessageTaskFactory</a>&lt;?&gt;&nbsp;taskFactory)</pre>
 </li>
 </ul>
 </li>
@@ -298,19 +298,19 @@ extends io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com
 </dl>
 </li>
 </ul>
-<a name="channelRead0-io.netty.channel.ChannelHandlerContext-com.ace.ng.dispatch.message.MessageHandler-">
+<a name="channelRead0-io.netty.channel.ChannelHandlerContext-com.ace.ng.dispatch.content.MessageHandler-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>channelRead0</h4>
 <pre>protected&nbsp;void&nbsp;channelRead0(io.netty.channel.ChannelHandlerContext&nbsp;ctx,
-                            <a href="../../../../com/ace/ng/dispatch/message/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&nbsp;handler)
+                            <a href="../../../../com/ace/ng/dispatch/content/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&nbsp;handler)
                      throws java.lang.Exception</pre>
 <div class="block">有客户端数据发送到服务端时会调用此方法，负责创建MessageTask独享，提交给自定义线程池处理业务逻辑。</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">指定者:</span></dt>
-<dd><code>channelRead0</code>&nbsp;在类中&nbsp;<code>io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/message/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</code></dd>
+<dd><code>channelRead0</code>&nbsp;在类中&nbsp;<code>io.netty.channel.SimpleChannelInboundHandler&lt;<a href="../../../../com/ace/ng/dispatch/content/MessageHandler.html" title="com.ace.ng.dispatch.message中的类">MessageHandler</a>&lt;?&gt;&gt;</code></dd>
 <dt><span class="paramLabel">参数:</span></dt>
 <dd><code>ctx</code> - Channel对应的ChannelContext</dd>
 <dd><code>handler</code> - 用户自定义实现的MessageHandler</dd>
