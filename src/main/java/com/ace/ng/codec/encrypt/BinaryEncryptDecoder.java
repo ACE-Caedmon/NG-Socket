@@ -12,6 +12,7 @@ import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.utils.CommonUtils;
+import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -182,6 +183,7 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
                 if(notDecode==null||!notDecode.value()){//需要解码的字段
                     CtClass typeClass=f.getType();
                     String typeSimpleName=typeClass.getSimpleName();
+                    String typeAllName=typeClass.getName();
                     String setMethodString=setHead+CommonUtils.firstToUpperCase(f.getName());
                     switch (typeSimpleName){
                         case "long":
@@ -209,11 +211,22 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
                             break;
                         case "Builder":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readToProtoBuf());");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readProtoBuf());");
                             break;
                         default:
-                            throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
+                            String builderClassFullName=typeAllName.replaceAll("\\$",".");
+                            if(AbstractMessage.Builder.class.isAssignableFrom(Class.forName(typeAllName))){
+                                int lastIndex=builderClassFullName.lastIndexOf("Builder");
+                                String protoClassName=builderClassFullName.substring(0, lastIndex);
+                                protoClassName=protoClassName.replaceAll("\\$",".");
+
+                                setPropertiesMethod.insertAfter(setMethodString+"(("+builderClassFullName+")$1.readProtoBuf("+protoClassName+"newBuilder()));");
+                            }else{
+                                throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
+                            }
+
                     }
+
                 }
             }
 

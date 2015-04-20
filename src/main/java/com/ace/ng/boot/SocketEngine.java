@@ -64,7 +64,7 @@ public class SocketEngine {
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.messageThreadSize);
             log.info("Socket package encrypt : {}", settings.encrypt);
-            log.info("MessageFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
+            log.info("CmdTaskFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
             log.info("Socket port :{}",settings.port);
             log.info("NG-Socket 启动完毕!");
             //f.channel().closeFuture().sync();
@@ -118,6 +118,6 @@ public class SocketEngine {
             }
             handlerFactory.registerHandler(annotation.id(), c);
         }
-
+        log.info("注册模块: {}",extension.getClass().getName());
     }
 }

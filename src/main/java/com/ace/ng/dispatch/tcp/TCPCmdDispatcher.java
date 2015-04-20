@@ -65,7 +65,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 		final ISession session=new Session(ctx.channel());
 		taskFactory.executeCmd(session, new CmdHandler() {
 			@Override
-			public void excute(Object user) {
+			public void execute(Object user) {
 				ctx.channel().attr(VarConst.SESSION_KEY).set(session);
 				SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
 			}

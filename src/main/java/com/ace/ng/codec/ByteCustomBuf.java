@@ -67,7 +67,7 @@ public class ByteCustomBuf implements CustomBuf{
 	}
 
 	@Override
-	public void readToProtoBuf(Builder<?> message) {
+	public Builder readProtoBuf(Builder message) {
 		short length=buf.readShort();
 		byte[] dst=new byte[length];
 		buf.readBytes(dst);
@@ -78,6 +78,7 @@ public class ByteCustomBuf implements CustomBuf{
 			logger.error("Protobuf 解析异常",e);
 		}
 		message.build();
+		return  message;
 	}
 
 	@Override

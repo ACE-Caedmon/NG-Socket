@@ -20,10 +20,13 @@ public abstract class Extension {
 	protected abstract void init();
 	/**
 	 * 注册消息处理器
-	 * @param clazz 对应指令ID的MessageHandler的Class
+	 * @param classes 对应指令ID的MessageHandler的Class
 	 * */
-	protected void regiterCmd(Class<? extends CmdHandler<?>> clazz){
-		cmdHandlers.add(clazz);
+	public Extension regiterCmd(Class<? extends CmdHandler<?>>...classes){
+		for(Class<? extends CmdHandler<?>> c:classes){
+			cmdHandlers.add(c);
+		}
+		return this;
 	}
 	public List<Class<? extends CmdHandler>> getCmdHandlers(){
 		return cmdHandlers;

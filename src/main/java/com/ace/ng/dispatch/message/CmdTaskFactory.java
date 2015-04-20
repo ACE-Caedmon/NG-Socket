@@ -3,7 +3,6 @@ package com.ace.ng.dispatch.message;
 import com.ace.ng.session.ISession;
 import com.jcwx.frm.current.IActor;
 import com.jcwx.frm.current.IActorManager;
-import com.sun.istack.internal.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.List;
 public abstract class CmdTaskFactory<T> {
 	private List<CmdTaskInterceptor> interceptors=new ArrayList<>();
 	private IActorManager actorManager;
-	public CmdTaskFactory(@NotNull IActorManager actorManager){
+	public CmdTaskFactory(IActorManager actorManager){
 		this.actorManager=actorManager;
 	}
 	void addCmdInterceptor(CmdTaskInterceptor interceptor){
@@ -35,7 +34,7 @@ public abstract class CmdTaskFactory<T> {
 					}
 				}
 				try{
-					handler.excute(getUser(session));
+					handler.execute(getUser(session));
 				}catch (Throwable cause){
 					for(CmdTaskInterceptor interceptor:interceptors){
 						interceptor.exceptionCaught(session, handler,cause);

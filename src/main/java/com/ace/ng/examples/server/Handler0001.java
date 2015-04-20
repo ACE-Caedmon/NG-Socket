@@ -37,7 +37,7 @@ public class Handler0001 extends SessionCmdHandler {
     }
 
     @Override
-    public void excute(ISession user) {
+    public void execute(ISession user) {
         System.out.println("接受到客户端消息:"+number+","+id+","+ content);
         Message001 message001=new Message001((short)1);
         message001.setContent("Message from Server");

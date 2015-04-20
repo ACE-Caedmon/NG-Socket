@@ -14,7 +14,7 @@ public interface CustomBuf {
 	long readLong();
 	double readDouble();
 	String readString();
-	void readToProtoBuf(Builder<?> builder);
+	Builder readProtoBuf(Builder builder);
 	void writeByte(byte b);
 	void writeBoolean(boolean b);
 	void writeShort(short s);
