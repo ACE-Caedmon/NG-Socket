@@ -9,6 +9,7 @@ import com.ace.ng.codec.binary.BinaryPacket;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.session.ISession;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -64,7 +65,7 @@ public class BinaryEncryptEncoder extends MessageToMessageEncoder<OutMessage> {
     @Override
 	protected void encode(ChannelHandlerContext ctx, OutMessage msg, List<Object> out)
 			throws Exception {
-		ByteBuf buf=Unpooled.buffer();
+		ByteBuf buf=PooledByteBufAllocator.DEFAULT.buffer();
 		buf.writeShort(msg.getCmd());
 		buf.writeByte(msg.getCode());
 		CustomBuf content=new ByteCustomBuf(buf);
@@ -81,9 +82,10 @@ public class BinaryEncryptEncoder extends MessageToMessageEncoder<OutMessage> {
         if(isEncrypt){
             List<Short> passports=(List<Short>)session.getVar(VarConst.PASSPORT);
             short passport=passports.get(index);//根据索引获取密码
-            BinaryEncryptUtil.encode(dst, dst.length, BinaryEncryptUtil.KEY, passport);//加密
+            String secretKey=ctx.attr(VarConst.SECRRET_KEY).get();
+            BinaryEncryptUtil.encode(dst, dst.length, secretKey, passport);//加密
         }
-        buf=Unpooled.buffer(dst.length+4);//开辟新Buff
+        buf= PooledByteBufAllocator.DEFAULT.buffer(dst.length + 4);//开辟新Buff
         //buf.writeShort(dst.length + 2);//写入包长度
         buf.writeBoolean(isEncrypt);//写入加密标识
         buf.writeByte(index);//写入密码索引

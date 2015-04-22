@@ -14,8 +14,10 @@ import com.ace.ng.session.ISession;
 import com.ace.ng.utils.CommonUtils;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import javassist.*;
 import org.slf4j.Logger;
@@ -89,14 +91,15 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
         ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
         byte entryptOffset=content.readByte();
         hasReadLength+=1;
-        ByteBuf bufForDecode=Unpooled.buffer(length-hasReadLength);//用来缓存一条报文的ByteBuf
+        ByteBuf bufForDecode= PooledByteBufAllocator.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
         if(isEncrypt){
             byte[] dst=new byte[length-hasReadLength];//存储包体
             content.readBytes(dst);//读取包体内容
             short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
             List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
             short passport=passportList.get(index);//得到密码
-            BinaryEncryptUtil.decode(dst, dst.length, BinaryEncryptUtil.KEY, passport);//解密
+            String secretKey=ctx.attr(VarConst.SECRRET_KEY).get();
+            BinaryEncryptUtil.decode(dst, dst.length, secretKey, passport);//解密
             bufForDecode.writeBytes(dst);
         }else{
             bufForDecode.writeBytes(content,length-hasReadLength);

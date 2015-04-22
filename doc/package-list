@@ -5,7 +5,7 @@ com.ace.ng.codec.encrypt
 com.ace.ng.constant
 com.ace.ng.dispatch
 com.ace.ng.dispatch.javassit
-com.ace.ng.dispatch.content
+com.ace.ng.dispatch.message
 com.ace.ng.dispatch.tcp
 com.ace.ng.dispatch.websocket
 com.ace.ng.event

@@ -7,9 +7,15 @@ import com.ace.ng.session.ISession;
  */
 public interface CmdTaskInterceptor {
     /**
-     * @return true ¹ıÂËÍ¨¹ı  false ¹ıÂË²»Í¨¹ı£¬²»ÄÜÍùºóÖ´ĞĞ
+     * @return true è¿‡æ»¤é€šè¿‡  false è¿‡æ»¤ä¸é€šè¿‡ï¼Œä¸èƒ½å¾€åæ‰§è¡Œ
      * */
     boolean beforeExecute(ISession session,CmdHandler cmdHandler);
+    /**
+     * åœ¨CmdHandler.execute()ä¹‹åæ‰§è¡Œ
+     * */
     void afterExecute(ISession session,CmdHandler cmdHandler);
+    /**
+     * åœ¨CmdHandler.execute()ä¸­å¦‚æœæ•è·åˆ°å¼‚å¸¸ä¼šè°ƒç”¨æ­¤æ¥å£
+     * */
     void exceptionCaught(ISession session,CmdHandler cmdHandler,Throwable cause);
  }

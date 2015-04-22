@@ -4,22 +4,6 @@ import java.util.*;
 
 
 public class BinaryEncryptUtil {
-	public static final String KEY = "xiaotong";
-	/**
-	 *
-	 * @param passBody passBody
-	 * @return
-	 */
-	public static int countOddNumber(List<Short> passBody){
-		int count=0;
-		for(int i=0;i<passBody.size();i++){
-			if(i%2==0){
-				count+=passBody.get(i);
-				//logger.info("count="+count);
-			}
-		}
-		return count;
-	}
     /**
      * @return 生成密码表
      * */
@@ -33,7 +17,6 @@ public class BinaryEncryptUtil {
 		List<Short> passBody = new ArrayList<Short>();
 		for(short i:set){
 			passBody.add( i );
-			//logger.info("passBody="+i);
 		}
 		return passBody;
 	}

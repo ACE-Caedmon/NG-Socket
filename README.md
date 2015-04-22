@@ -26,7 +26,7 @@ CmdHandler解码有两种方式。
         }
 
         @Override
-        public void excute(ISession playerOnline) {
+        public void execute(ISession playerOnline) {
             System.out.println("Server recived:"+content);
             Message001 message001=new Message001((short)1);
             message001.setContent("content");
@@ -44,7 +44,7 @@ CmdHandler解码有两种方式。
         }
 
         @Override
-        public void excute(ISession playerOnline) {
+        public void execute(ISession playerOnline) {
             System.out.println("Server recived:"+content);
             Message001 message001=new Message001((short)1);
             message001.setContent("content");

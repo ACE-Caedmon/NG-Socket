@@ -23,6 +23,8 @@ public class ServerSettings {
     public int messageThreadSize =10;
     /**网络数据是否加密**/
     public boolean encrypt=false;
+
+    public String secretKey="caedmon";
     /**
      * 应用层自定义扩展的MessageTaskFactory实现类
      * @see CmdTaskFactory

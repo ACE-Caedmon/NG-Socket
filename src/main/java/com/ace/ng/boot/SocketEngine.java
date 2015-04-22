@@ -14,6 +14,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,6 @@ public class SocketEngine {
     private HandlerFactory handlerFactory;
     private Set<Extension> extensions;
     private static final Logger log =LoggerFactory.getLogger(SocketEngine.class);
-    private static final String TCP_PROTOCOL="tcp",WEB_SOCKET_PROTOCOL="websocket";
     public SocketEngine(ServerSettings settings,HandlerFactory handlerFactory){
         this.settings=settings;
         this.handlerFactory = handlerFactory;
@@ -46,11 +46,11 @@ public class SocketEngine {
         try {
             ChannelInitializer<SocketChannel> initializer=null;
             switch (settings.protocol.toLowerCase()){
-                case TCP_PROTOCOL:
-                    initializer=new TCPServerInitializer(handlerFactory,settings.cmdTaskFactory);
+                case ServerSettings.TCP_PROTOCOL:
+                    initializer=new TCPServerInitializer(handlerFactory,settings.cmdTaskFactory,settings.secretKey);
                     break;
-                case WEB_SOCKET_PROTOCOL:
-                    initializer=new WebSocketServerInitalizer(handlerFactory,settings.cmdTaskFactory);
+                case ServerSettings.WEBSOCKET_PROTOCOL:
+                    initializer=new WebSocketServerInitalizer(handlerFactory,settings.cmdTaskFactory,settings.secretKey);
                     break;
             }
 
@@ -66,7 +66,7 @@ public class SocketEngine {
             log.info("Socket package encrypt : {}", settings.encrypt);
             log.info("CmdTaskFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
             log.info("Socket port :{}",settings.port);
-            log.info("NG-Socket 启动完毕!");
+
             //f.channel().closeFuture().sync();
         } catch (Exception e) {
             log.error("<<<<<<<网络服务启动异常>>>>>>", e);
@@ -74,11 +74,24 @@ public class SocketEngine {
             bossGroup.shutdownGracefully();
             return;
         }
+        for(Extension extension:extensions){
+            log.info("Load extension:{}",StringUtil.simpleClassName(extension));
+            extension.init();
+            List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
+            for(Class c:classes){
+                CmdAnnotation annotation= (CmdAnnotation) c.getAnnotation(CmdAnnotation.class);
+                if(annotation==null){
+                    throw new NullPointerException("Class has no CmdAnnotation:"+c.getName());
+                }
+                handlerFactory.registerHandler(annotation.id(), c);
+            }
+        }
         //如果系统配置不加密则不发送密码表
         if(settings.encrypt){
             //用来给客户端发送密码表
             SessionFire.getInstance().registerEvent(SessionFire.SessionEvent.SESSION_LOGIN, new ValidateOKHandler());
         }
+        log.info("NG-Socket 启动完毕!");
     }
     /**
      * 注册消息处理器
@@ -109,15 +122,6 @@ public class SocketEngine {
                 throw new IllegalArgumentException("重复加载Extension( extension = "+extension.getClass().getName()+")");
             }
         }
-        extension.init();
-        List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
-        for(Class c:classes){
-            CmdAnnotation annotation= (CmdAnnotation) c.getAnnotation(CmdAnnotation.class);
-            if(annotation==null){
-                throw new NullPointerException("Class has no CmdAnnotation:"+c.getName());
-            }
-            handlerFactory.registerHandler(annotation.id(), c);
-        }
-        log.info("注册模块: {}",extension.getClass().getName());
+        extensions.add(extension);
     }
 }

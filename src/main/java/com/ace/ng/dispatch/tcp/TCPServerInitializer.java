@@ -9,26 +9,31 @@ import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
 import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
 import com.ace.ng.codec.binary.BinaryDecoder;
 import com.ace.ng.codec.binary.BinaryEncoder;
+import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.dispatch.message.HandlerFactory;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.AttributeKey;
 
 @Sharable
 public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
 	private CmdTaskFactory cmdTaskFactory;
     private HandlerFactory handlerFactory;
-	public TCPServerInitializer(HandlerFactory handlerFactory,CmdTaskFactory cmdTaskFactory){
+	private String secretKey;
+	public TCPServerInitializer(HandlerFactory handlerFactory,CmdTaskFactory cmdTaskFactory,String secretKey){
 		this.handlerFactory=handlerFactory;
         this.cmdTaskFactory = cmdTaskFactory;
+		this.secretKey=secretKey;
 	}
 	@Override
 	protected void initChannel(SocketChannel ch) throws Exception {
-		ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
+		//ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 		 //IdleStateHandler idleStateHandler=new IdleStateHandler(60, 30, 0);
 		ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
 		//ch.pipeline().addLast(idleStateHandler);
@@ -38,6 +43,7 @@ public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
 		ch.pipeline().addLast(new BinaryEncryptEncoder());
 		ch.pipeline().addLast(new BinaryEncoder());
 		ch.pipeline().addLast(new TCPCmdDispatcher(cmdTaskFactory));
+		ch.attr(VarConst.SECRRET_KEY).set(secretKey);
 		
 		
 	}
