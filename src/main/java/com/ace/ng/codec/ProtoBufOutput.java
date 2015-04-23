@@ -5,16 +5,11 @@ import com.google.protobuf.AbstractMessage.Builder;
  * @author Chenlong
  * Protobuf消息封装输出对象
  * */
-public class ProtoBufMessage extends WithCodeMessage{
+public class ProtoBufOutput implements Output{
 	private Builder<?> builder;
-	public ProtoBufMessage(short cmd,byte code,Builder<?> builder){
-		super(cmd, code);
+	public ProtoBufOutput(Builder<?> builder){
 		this.builder=builder;
 	}
-	public ProtoBufMessage(short cmd,Builder<?> builder){
-		this(cmd, (byte)0, builder);
-	}
-
 	@Override
 	public void encode(CustomBuf buf) {
 		buf.writeProtoBuf(builder);

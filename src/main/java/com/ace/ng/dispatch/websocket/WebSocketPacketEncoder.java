@@ -1,6 +1,5 @@
 package com.ace.ng.dispatch.websocket;
 
-import com.ace.ng.codec.SocketPacket;
 import com.ace.ng.codec.binary.BinaryPacket;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;

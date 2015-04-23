@@ -2,7 +2,6 @@ package com.ace.ng.dispatch.websocket;
 
 import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
 import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
-import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.dispatch.message.HandlerFactory;
@@ -10,7 +9,6 @@ import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.jcwx.frm.current.IActor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -40,7 +38,7 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
         taskFactory.executeCmd(session, new CmdHandler() {
             @Override
             public void execute(Object user) {
-                ctx.channel().attr(VarConst.SESSION_KEY).set(session);
+                ctx.channel().attr(Session.SESSION_KEY).set(session);
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
             }
         });
@@ -48,7 +46,7 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     }
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
-        final ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+        final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         session.getActor().execute(new Runnable() {
             public void run() {
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
@@ -68,7 +66,7 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
                 e.printStackTrace();
             }
         }else if(msg instanceof CmdHandler){
-            ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+            ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
             taskFactory.executeCmd(session, (CmdHandler)msg);
         }
     }

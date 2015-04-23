@@ -75,7 +75,6 @@ public class ByteCustomBuf implements CustomBuf{
 			message.mergeFrom(dst);
 		} catch (InvalidProtocolBufferException e) {
 			e.printStackTrace();
-			logger.error("Protobuf 解析异常",e);
 		}
 		message.build();
 		return  message;

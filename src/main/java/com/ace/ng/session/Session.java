@@ -6,31 +6,46 @@ package com.ace.ng.session;
  * 客户端连接对应的Session
  * */
 
-import com.ace.ng.codec.OutMessage;
+import com.ace.ng.codec.CustomBuf;
+import com.ace.ng.codec.Output;
+import com.ace.ng.codec.OutputPacket;
+import com.ace.ng.codec.ProtoBufOutput;
+import com.google.protobuf.AbstractMessage;
 import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.UnsupportedMessageTypeException;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Session implements ISession{
+	/**Session对象Key**/
+	public static final AttributeKey<ISession> SESSION_KEY=new AttributeKey<ISession>("sessionkey");
+	/**秘钥*/
+	public static final AttributeKey<String> SECRRET_KEY=new AttributeKey<String>("secretKey");
+	/**发送给客户端的数据是否需要加密**/
+	public static final AttributeKey<Boolean> NEED_ENCRYPT=new AttributeKey<>("needencrypt");
+	/**每个客户端连接存储的密码表**/
+	public static final AttributeKey<List<Short>>  PASSPORT=new AttributeKey<>("passport");
+	/**验证报文合法性的自增ID**/
+	public static final AttributeKey<Integer>  INCREMENT=new AttributeKey<>("increment");
 	private Channel channel;//连接通道
 	private long createTime;//创建时间
 	private long lastActiveTime;//最后活动时间
 	private volatile boolean active=true;
-	private Map<String, Object> varMap=new Hashtable<String, Object>();
 	private IActor actor;
     private CountDownLatch closeCompleteLatch=new CountDownLatch(1);
-	private Lock lock=new ReentrantLock(true);
     private static Logger logger= LoggerFactory.getLogger(Session.class);
 	public Session(Channel channel){
 		this.channel=channel;
@@ -65,7 +80,7 @@ public class Session implements ISession{
                 waitForCloseComplete();
 			}
 		} catch (InterruptedException e) {
-            logger.error("Wait disconnect task error",e);
+            e.printStackTrace();
 		}
 		return future;
 	}
@@ -79,10 +94,10 @@ public class Session implements ISession{
 		// TODO Auto-generated method stub
 		this.lastActiveTime=lastActiveTime;
 	}
-	@Override
-	public Future<?> write(OutMessage message) {
+	private Future<?> send(short cmd, Output message, byte code) {
 		if(channel.isActive()){
-			ChannelFuture future=channel.writeAndFlush(message);
+			OutputPacket packet=new OutputPacket(cmd,message,code);
+			ChannelFuture future=channel.writeAndFlush(packet);
 			setLastActiveTime(System.currentTimeMillis());
 			return future;
 		}else{
@@ -92,28 +107,18 @@ public class Session implements ISession{
 
 	}
 	@Override
-	public Lock getLock() {
+	public boolean containsAttribute(AttributeKey<?> key) {
 		// TODO Auto-generated method stub
-		return lock;
+		return channel.attr(key).get()!=null;
 	}
 	@Override
-	public void setVar(String key, Object value) {
-		varMap.put(key, value);
-		
-	}
-	@Override
-	public boolean containsVar(String key) {
+	public <T> T getAttribute(AttributeKey<T> key) {
 		// TODO Auto-generated method stub
-		return varMap.containsKey(key);
-	}
-	@Override
-	public Object getVar(String key) {
-		// TODO Auto-generated method stub
-		return varMap.get(key);
+		return channel.attr(key).get();
 	}
 	@Override
 	public void clear() {
-		varMap.clear();
+
 	}
 	@Override
 	public boolean isActive() {
@@ -126,10 +131,10 @@ public class Session implements ISession{
 		this.active=active;
 	}
 	@Override
-	public Future<?> disconnect(boolean immediately, OutMessage message) {
+	public Future<?> disconnect(boolean immediately, short cmd,Output output,byte code) {
 		Future<?> future=channel.newSucceededFuture();
 		if(channel.isActive()){
-			future=this.write(message);
+			future=this.send(cmd, output, code);
 			try {
 				if(immediately){
 					future.sync();
@@ -143,21 +148,12 @@ public class Session implements ISession{
 		}
 		return future;
 	}
-	@Override
-	public void setVars(Map<String, Object> vars) {
-		for(Entry<String, Object> entry:vars.entrySet()){
-			varMap.put(entry.getKey(), entry.getValue());
-		}
-		
+	public Future<?> disconnect(boolean immediately, short cmd,Output output) {
+		return disconnect(immediately,cmd,output,(byte)0);
 	}
 	@Override
-	public void removeVar(String key) {
-		varMap.remove(key);
-	}
-	@Override
-	public java.util.concurrent.Future<?> send(OutMessage message) {
-		// TODO Auto-generated method stub
-		return channel.writeAndFlush(message);
+	public <T> void removeAttribute(AttributeKey<T> key) {
+		channel.attr(key).remove();
 	}
 	public IActor getActor() {
 		return actor;
@@ -182,4 +178,35 @@ public class Session implements ISession{
         closeCompleteLatch.countDown();
     }
 
+	@Override
+	public <T> void setAttribute(AttributeKey<T> key, T value) {
+		channel.attr(key).set(value);
+	}
+
+	@Override
+	public Future<?> send(short cmd, byte code) {
+		return send(cmd,Output.NULL_CONTENT_OUTPUT,code);
+	}
+
+	@Override
+	public Future<?> send(short cmd, Object output,byte code) {
+		if(output instanceof Output){
+			return send(cmd,(Output)output);
+		}else if(output instanceof AbstractMessage.Builder){
+			return send(cmd,(AbstractMessage.Builder)output);
+		}else{
+			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
+		}
+	}
+	@Override
+	public Future<?> send(short cmd, Object output) {
+		byte b=0;
+		if(output instanceof Output){
+			return send(cmd,(Output)output,b);
+		}else if(output instanceof AbstractMessage.Builder){
+			return send(cmd,(AbstractMessage.Builder)output,b);
+		}else{
+			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
+		}
+	}
 }

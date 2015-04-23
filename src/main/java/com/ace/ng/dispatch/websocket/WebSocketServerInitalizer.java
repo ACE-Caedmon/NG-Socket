@@ -3,6 +3,7 @@ package com.ace.ng.dispatch.websocket;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.dispatch.message.HandlerFactory;
+import com.ace.ng.session.Session;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
@@ -31,7 +32,7 @@ public class WebSocketServerInitalizer extends ChannelInitializer<SocketChannel>
         //ch.pipeline().addLast(idleStateHandler);
         ch.pipeline().addLast(new HttpServerCodec());
         ch.pipeline().addLast(new WebSocketCmdDispatcher(handlerFactory, cmdTaskFactory));
-        ch.attr(VarConst.SECRRET_KEY).set(secretKey);
+        ch.attr(Session.SECRRET_KEY).set(secretKey);
 
     }
 }

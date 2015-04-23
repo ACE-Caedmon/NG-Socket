@@ -12,6 +12,7 @@ import com.ace.ng.codec.binary.BinaryEncoder;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.dispatch.message.HandlerFactory;
+import com.ace.ng.session.Session;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
@@ -43,7 +44,7 @@ public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
 		ch.pipeline().addLast(new BinaryEncryptEncoder());
 		ch.pipeline().addLast(new BinaryEncoder());
 		ch.pipeline().addLast(new TCPCmdDispatcher(cmdTaskFactory));
-		ch.attr(VarConst.SECRRET_KEY).set(secretKey);
+		ch.attr(Session.SECRRET_KEY).set(secretKey);
 		
 		
 	}

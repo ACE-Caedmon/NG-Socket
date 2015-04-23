@@ -11,6 +11,7 @@ import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
+import com.ace.ng.session.Session;
 import com.ace.ng.utils.CommonUtils;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
@@ -88,7 +89,7 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
         int hasReadLength=0;
         boolean isEncrypt=content.readBoolean();
         hasReadLength+=1;
-        ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+        ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         byte entryptOffset=content.readByte();
         hasReadLength+=1;
         ByteBuf bufForDecode= PooledByteBufAllocator.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
@@ -96,21 +97,21 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
             byte[] dst=new byte[length-hasReadLength];//存储包体
             content.readBytes(dst);//读取包体内容
             short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
-            List<Short> passportList=(List<Short>)session.getVar(VarConst.PASSPORT);//得到密码表集合
+            List<Short> passportList=session.getAttribute(Session.PASSPORT);//得到密码表集合
             short passport=passportList.get(index);//得到密码
-            String secretKey=ctx.attr(VarConst.SECRRET_KEY).get();
+            String secretKey=ctx.attr(Session.SECRRET_KEY).get();
             BinaryEncryptUtil.decode(dst, dst.length, secretKey, passport);//解密
             bufForDecode.writeBytes(dst);
         }else{
             bufForDecode.writeBytes(content,length-hasReadLength);
         }
         int ci=bufForDecode.readInt();//获取消息中的自增ID
-        if(session.containsVar(VarConst.INCREMENT)){//如果已存在自增ID
-            int si=(Integer)session.getVar(VarConst.INCREMENT);
+        if(session.containsAttribute(Session.INCREMENT)){//如果已存在自增ID
+            int si=session.getAttribute(Session.INCREMENT);
             if(ci==si){//判断客户端传送自增ID是否与服务器相等
                 if(!incred){
                     si=ci+1;//自增
-                    session.setVar(VarConst.INCREMENT, si);
+                    session.setAttribute(Session.INCREMENT, si);
                     incred=true;
                 }
             }else{
@@ -119,7 +120,7 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
                 return;
             }
         }else{
-            session.setVar(VarConst.INCREMENT, ci + 1);
+            session.setAttribute(Session.INCREMENT, ci + 1);
             incred=true;
         }
         short cmd=bufForDecode.readShort();

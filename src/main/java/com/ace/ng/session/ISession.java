@@ -4,17 +4,16 @@
  * */
 package com.ace.ng.session;
 
-import com.ace.ng.dispatch.Online;
-import com.ace.ng.codec.OutMessage;
+import com.ace.ng.codec.Output;
+import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 
-public interface ISession extends Online {
+public interface ISession {
 	/**
 	 * @return Session创建时间
 	 * */
@@ -36,6 +35,8 @@ public interface ISession extends Online {
 	 * @param immediately 是否立即断开
 	 * */
 	Future<?> disconnect(boolean immediately);
+
+	Future<?> disconnect(boolean immediately, short cmd,Output output,byte code);
 	/**
 	 * @return session最后活动时间
 	 * */
@@ -44,16 +45,8 @@ public interface ISession extends Online {
 	 * @param lastActiveTime Session最后活动时间
 	 * */
 	void setLastActiveTime(long lastActiveTime);
-	/**
-     * 发送信息给客户端
-     * @param outMessage 发送的数据对象
-     * @return 任务执行结果
-	 * */
-	Future<?> write(OutMessage outMessage);
-	/**
-	 * @return 线程锁
-	 * */
-	Lock getLock();
+
+	Future<?> send(short cmd,byte code);
 	/**
 	 * @return 是否活动状态
 	 * */
@@ -68,27 +61,22 @@ public interface ISession extends Online {
      * @param key key
      * @param value value
 	 * */
-	void setVar(String key, Object value);
+	<T> void setAttribute(AttributeKey<T> key, T value);
 	/**
      * @param key key
 	 * @return 是否包含指定变量
 	 * */
-	boolean containsVar(String key);
+	boolean containsAttribute(AttributeKey<?> key);
 	/**
      * @param key key
 	 * @return 获取指定变量
 	 * */
-	Object getVar(String key);
-	/**
-	 * 设置多个变量到Session中
-     * @param  vars vars
-	 * */
-	void setVars(Map<String, Object> vars);
+	<T> T getAttribute(AttributeKey<T> key);
 	/**
 	 * 移除指定变量
      * @param key
 	 * */
-	void removeVar(String key);
+	<T> void removeAttribute(AttributeKey<T> key);
 	/**
 	 * 清除Session相关信息
 	 * */
@@ -99,4 +87,10 @@ public interface ISession extends Online {
     void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException;
 
     void noticeCloseComplete();
+
+	void setActor(IActor actor);
+
+	IActor getActor();
+	Future<?> send(short cmd,Object output);
+	Future<?> send(short cmd, Object output,byte code);
 }

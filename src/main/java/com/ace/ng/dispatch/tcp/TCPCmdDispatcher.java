@@ -32,7 +32,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
      * */
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		final ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+		final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         final IActor actor=session.getActor();
 		actor.execute(new Runnable() {
             @Override
@@ -53,7 +53,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, CmdHandler handler)
 			throws Exception {
-		ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
+		ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
 		taskFactory.executeCmd(session,handler);
 	}
     /**
@@ -66,7 +66,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 		taskFactory.executeCmd(session, new CmdHandler() {
 			@Override
 			public void execute(Object user) {
-				ctx.channel().attr(VarConst.SESSION_KEY).set(session);
+				ctx.channel().attr(Session.SESSION_KEY).set(session);
 				SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
 			}
 		});
@@ -78,7 +78,6 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
 			throws Exception {
-		ISession session=ctx.channel().attr(VarConst.SESSION_KEY).get();
 		log.error("出现异常:", cause);
 	}
 

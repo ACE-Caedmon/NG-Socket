@@ -6,6 +6,7 @@ import com.ace.ng.codec.PassportTable;
 import com.ace.ng.constant.VarConst;
 import com.ace.ng.event.IEventHandler;
 import com.ace.ng.session.ISession;
+import com.ace.ng.session.Session;
 import io.netty.util.concurrent.Future;
 
 import java.util.List;
@@ -19,10 +20,9 @@ public class ValidateOKHandler implements IEventHandler<ISession> {
 	public void handleEvent(ISession session) {
 		List<Short> passports= BinaryEncryptUtil.getPassBody();
 		//session.setVar(VarConst.INCREMENT, new AtomicInteger(passports.get(0)));
-		session.setVar(VarConst.PASSPORT, passports);
-		PassportTable passportMessage=new PassportTable((short)-1,(byte)0);
-		passportMessage.setPassports(passports);
-		Future<?> future=session.write(passportMessage);
+		session.setAttribute(Session.PASSPORT, passports);
+		PassportTable passportMessage=new PassportTable(passports);
+		Future<?> future=session.send((short) -1, passportMessage);
 		try {
 			future.get();
 		} catch (InterruptedException e) {
@@ -32,7 +32,7 @@ public class ValidateOKHandler implements IEventHandler<ISession> {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		session.setVar(VarConst.NEED_ENCRYPT, true);
+		session.setAttribute(Session.NEED_ENCRYPT, true);
 		
 	}
 

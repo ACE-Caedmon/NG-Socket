@@ -13,7 +13,7 @@ public class Server {
         PropertyConfigurator.configure("conf/log4j.properties");
         HandlerFactory handlerFactory =new HandlerFactory();
         ServerSettings settings=ServerSettings.DEFAULT_INSTANCE;
-        settings.protocol=ServerSettings.WEBSOCKET_PROTOCOL;
+        settings.protocol=ServerSettings.TCP_PROTOCOL;
         settings.port=8001;
         SocketEngine engine=new SocketEngine(settings, handlerFactory);
         engine.registerExtension(new TestExtension());
