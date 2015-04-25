@@ -5,22 +5,18 @@
 package com.ace.ng.dispatch.tcp;
 
 
-import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
-import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
 import com.ace.ng.codec.binary.BinaryDecoder;
 import com.ace.ng.codec.binary.BinaryEncoder;
-import com.ace.ng.constant.VarConst;
+import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
+import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.Session;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.AttributeKey;
 
 @Sharable
 public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{

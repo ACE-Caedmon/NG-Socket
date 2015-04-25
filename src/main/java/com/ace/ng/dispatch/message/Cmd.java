@@ -8,7 +8,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-public @interface CmdAnnotation {
+public @interface Cmd {
     short id();
     String desc();
 }

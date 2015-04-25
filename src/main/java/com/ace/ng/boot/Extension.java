@@ -1,11 +1,8 @@
 package com.ace.ng.boot;
-import com.ace.ng.dispatch.message.CmdAnnotation;
 import com.ace.ng.dispatch.message.CmdHandler;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -17,7 +14,7 @@ public abstract class Extension {
 	public Extension(){
 		this.cmdHandlers=new ArrayList<>(10);
 	}
-	protected abstract void init();
+	public abstract void init();
 	/**
 	 * 注册消息处理器
 	 * @param classes 对应指令ID的MessageHandler的Class

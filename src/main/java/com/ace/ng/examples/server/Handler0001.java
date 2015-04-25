@@ -1,13 +1,13 @@
 package com.ace.ng.examples.server;
 
-import com.ace.ng.dispatch.message.CmdAnnotation;
+import com.ace.ng.dispatch.message.Cmd;
 import com.ace.ng.impl.SessionCmdHandler;
 import com.ace.ng.session.ISession;
 
 /**
  * Created by Administrator on 2014/6/9.
  */
-@CmdAnnotation(id=1,desc="测试用")
+@Cmd(id=1,desc="测试用")
 public class Handler0001 extends SessionCmdHandler {
     private String content;
 

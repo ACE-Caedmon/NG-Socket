@@ -1,9 +1,5 @@
-package com.ace.ng.codec.encrypt;
+package com.ace.ng.codec;
 
-import com.ace.ng.codec.BinaryCodecApi;
-import com.ace.ng.codec.ByteCustomBuf;
-import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.codec.NotDecode;
 import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.binary.BinaryPacket;
 import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
@@ -17,7 +13,6 @@ import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageDecoder;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,81 +22,37 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 网络数据报文解码处理器
- * @author Chenlong
- * 协议格式<br>
- *     <table  border frame="box">
- *         <tr>
- *             <th style="text-align:center"></th>
- *             <th style="text-align:center">包长</th>
- *             <th style="text-align:center">是否加密</th>
- *             <th style="text-align:center">密码表索引</th>
- *             <th style="text-align:center">自增ID</th>
- *             <th style="text-align:center">指令ID(cmd)</th>
- *             <th style="text-align:center">消息体(MessageHandler中自定义内容)</th>
- *         </tr>
- *         <tr>
- *             <td>数据类型</td>
- *             <td style="text-align:center">short</td>
- *             <td style="text-align:center">byte</td>
- *             <td style="text-align:center">byte</td>
- *             <td style="text-align:center">int</td>
- *             <td style="text-align:center">short</td>
- *             <td style="text-align:center">byte[]</td>
- *         </tr>
- *             <td>每部分字节数</td>
- *             <td style="text-align:center">2</td>
- *             <td style="text-align:center">1</td>
- *             <td style="text-align:center">1</td>
- *             <td style="text-align:center">4</td>
- *             <td style="text-align:center">2</td>
- *             <td style="text-align:center">根据消息体内容计算</td>
- *         </tr>
- *         <tr>
- *             <td style="text-align:center">是否加密</td>
- *             <td colspan="3" style="text-align:center">未加密部分</td>
- *             <td colspan="3" style="text-align:center">加密部分</td>
- *         </tr>
- *     </table>
- * */
-public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> {
-	private static final Logger log =LoggerFactory.getLogger(BinaryEncryptDecoder.class);
-	private boolean incred=false;//是否已自增
-    private HandlerFactory handlerFactory;
+ * Created by Administrator on 2015/4/25.
+ */
+public class BinaryCodecApi {
+    private static Logger log= LoggerFactory.getLogger(BinaryCodecApi.class);
     private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<Short,HandlerPropertySetter>(100);
     private static ClassPool classPool=ClassPool.getDefault();
-    public BinaryEncryptDecoder(HandlerFactory handlerFactory){
-        this.handlerFactory=handlerFactory;
-    }
-	/**
-     * 负责对数据包进行解码
-	 * @param ctx 对应Channel的上下文
-	 * @param packet 数据包
-	 * @param out 输出事件对象
-	 * */
-	@Override
-	protected void decode(ChannelHandlerContext ctx, BinaryPacket packet,
-			List<Object> out) throws Exception {
-        ByteBuf bufForDecode=BinaryCodecApi.decodeContent(packet, ctx);
-        ISession session=ctx.attr(Session.SESSION_KEY).get();
-        int ci=bufForDecode.readInt();//获取消息中的自增ID
-        if(session.containsAttribute(Session.INCREMENT)){//如果已存在自增ID
-            int si=session.getAttribute(Session.INCREMENT);
-            if(ci==si){//判断客户端传送自增ID是否与服务器相等
-                if(!incred){
-                    si=ci+1;//自增
-                    session.setAttribute(Session.INCREMENT, si);
-                    incred=true;
-                }
-            }else{
-                log.error("自增ID不合法:ci ={},si={}", ci, si);
-                bufForDecode.skipBytes(bufForDecode.readableBytes());
-                return;
-            }
-        }else{
-            session.setAttribute(Session.INCREMENT, ci + 1);
-            incred=true;
+    public static ByteBuf decodeContent(BinaryPacket packet,ChannelHandlerContext ctx){
+        ByteBuf content=packet.getContent();
+        short length=(short)content.readableBytes();
+        int hasReadLength=0;
+        boolean isEncrypt=content.readBoolean();
+        hasReadLength+=1;
+        ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
+        byte entryptOffset=content.readByte();
+        hasReadLength+=1;
+        ByteBuf bufForDecode= PooledByteBufAllocator.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
+        if(isEncrypt){
+            byte[] dst=new byte[length-hasReadLength];//存储包体
+            content.readBytes(dst);//读取包体内容
+            short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
+            List<Short> passportList=session.getAttribute(Session.PASSPORT);//得到密码表集合
+            short passport=passportList.get(index);//得到密码
+            String secretKey=ctx.attr(Session.SECRRET_KEY).get();
+            BinaryEncryptUtil.decode(dst, dst.length, secretKey, passport);//解密
+            bufForDecode.writeBytes(dst);
+        }else {
+            bufForDecode.writeBytes(content, length - hasReadLength);
         }
+        return bufForDecode;
+    }
+    public static CmdHandler decodeCmdHandler(HandlerFactory handlerFactory,ByteBuf bufForDecode){
         short cmd=bufForDecode.readShort();
         CmdHandler<?> handler=handlerFactory.getHandler(cmd);
         if(handler!=null){
@@ -116,19 +67,15 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
             } catch (Exception e) {
                 log.error("解码异常:cmd={}", cmd, e);
                 bufForDecode.skipBytes(bufForDecode.readableBytes());
-            }finally{
-                incred=false;//一条消息处理完就把自增标识重置一次
-                out.add(handler);
             }
         }else{
             log.error("未知指令:cmd ={},length={}", cmd, bufForDecode.readableBytes());
             bufForDecode.skipBytes(bufForDecode.readableBytes());
         }
         bufForDecode.release();
-
-	}
-
-    private HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler<?> handler) throws  Exception{
+        return handler;
+    }
+    private static HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler<?> handler) throws  Exception{
         //构造HandlerPropertySetter
         HandlerPropertySetter handlerPropertySetter=handlerPropertySetterMap.get(cmd);
         if(handlerPropertySetter==null){
@@ -154,7 +101,7 @@ public class BinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> 
         }
         return handlerPropertySetter;
     }
-    private void addAutoDecodeSrc(CtMethod setPropertiesMethod,CtClass tempHandler,String handlerClassName) throws Exception{
+    private static void addAutoDecodeSrc(CtMethod setPropertiesMethod,CtClass tempHandler,String handlerClassName) throws Exception{
         CtField[] protocolFields=tempHandler.getDeclaredFields();
         setPropertiesMethod.addLocalVariable("h",tempHandler);
         setPropertiesMethod.insertAfter(" h=((" + handlerClassName + ")$2);");

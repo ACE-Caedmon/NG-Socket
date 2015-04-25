@@ -33,8 +33,15 @@ public abstract class CmdTaskFactory<T> {
 						return;
 					}
 				}
+
 				try{
-					handler.execute(getUser(session));
+					T user=getUser(session);
+					if(user==null){
+						((CmdHandler<ISession>)handler).execute(session);
+					}else{
+						handler.execute(getUser(session));
+					}
+
 				}catch (Throwable cause){
 					for(CmdTaskInterceptor interceptor:interceptors){
 						interceptor.exceptionCaught(session, handler,cause);

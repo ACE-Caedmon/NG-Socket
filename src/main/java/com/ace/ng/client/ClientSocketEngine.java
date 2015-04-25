@@ -1,5 +1,7 @@
-package com.ace.ng.boot;
+package com.ace.ng.client;
 
+import com.ace.ng.boot.Extension;
+import com.ace.ng.boot.ServerSettings;
 import com.ace.ng.dispatch.message.Cmd;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.HandlerFactory;
@@ -7,13 +9,13 @@ import com.ace.ng.dispatch.tcp.TCPServerInitializer;
 import com.ace.ng.dispatch.websocket.WebSocketServerInitalizer;
 import com.ace.ng.handler.ValidateOKHandler;
 import com.ace.ng.session.SessionFire;
-import io.netty.bootstrap.ServerBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,15 +25,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by Chenlong on 2014/5/19.
- * 网络引擎核心启动类
+ * Created by Administrator on 2015/4/24.
  */
-public class SocketEngine {
+public class ClientSocketEngine {
     private ServerSettings settings;
     private HandlerFactory handlerFactory;
     private Set<Extension> extensions;
-    private static final Logger log =LoggerFactory.getLogger(SocketEngine.class);
-    public SocketEngine(ServerSettings settings,HandlerFactory handlerFactory){
+    private static final Logger log = LoggerFactory.getLogger(ClientSocketEngine.class);
+    public ClientSocketEngine(ServerSettings settings,HandlerFactory handlerFactory){
         this.settings=settings;
         this.handlerFactory = handlerFactory;
         this.extensions=new HashSet<Extension>();
@@ -41,8 +42,7 @@ public class SocketEngine {
      * */
     public void start(){
         log.info("NG-Socket 初始化!");
-        final EventLoopGroup bossGroup = new NioEventLoopGroup(settings.bossThreadSize);
-        final EventLoopGroup workerGroup = new NioEventLoopGroup(settings.workerThreadSize);
+        final EventLoopGroup group = new NioEventLoopGroup(settings.bossThreadSize);
         try {
             ChannelInitializer<SocketChannel> initializer=null;
             switch (settings.protocol.toLowerCase()){
@@ -54,28 +54,17 @@ public class SocketEngine {
                     break;
             }
 
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(initializer);
-            ChannelFuture f =  b.bind(settings.port).sync();
-            log.info("Protocol type: {}",settings.protocol);
-            log.info("Boss thread : {}",settings.bossThreadSize);
-            log.info("Worker thread : {}",settings.workerThreadSize);
-            log.info("Logic thread:{}",settings.messageThreadSize);
-            log.info("Socket package encrypt : {}", settings.encrypt);
-            log.info("CmdTaskFactory : {}", settings.cmdTaskFactory.getClass().getCanonicalName());
-            log.info("Socket port :{}",settings.port);
-
-            //f.channel().closeFuture().sync();
+            Bootstrap b = new Bootstrap();
+            b.group(group).handler(new TCPServerInitializer(handlerFactory,settings.cmdTaskFactory,settings.secretKey));
+            b.channel(NioSocketChannel.class);
+            b.connect("localhost",settings.port);
         } catch (Exception e) {
             log.error("<<<<<<<网络服务启动异常>>>>>>", e);
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
+            group.shutdownGracefully();
             return;
         }
         for(Extension extension:extensions){
-            log.info("Load extension:{}",StringUtil.simpleClassName(extension));
+            log.info("Load extension:{}", StringUtil.simpleClassName(extension));
             extension.init();
             List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
             for(Class c:classes){

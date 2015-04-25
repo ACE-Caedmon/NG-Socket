@@ -5,7 +5,6 @@
  * */
 package com.ace.ng.dispatch.tcp;
 
-import com.ace.ng.constant.VarConst;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.session.ISession;

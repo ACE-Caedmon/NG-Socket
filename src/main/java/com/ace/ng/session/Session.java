@@ -171,7 +171,7 @@ public class Session implements ISession{
 
     @Override
     public void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException {
-        closeCompleteLatch.await(timeout,unit);
+        closeCompleteLatch.await(timeout, unit);
     }
     @Override
     public void noticeCloseComplete() {
@@ -209,4 +209,5 @@ public class Session implements ISession{
 			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
 		}
 	}
+
 }
