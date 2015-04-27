@@ -8,7 +8,7 @@ NG-Socket
 
 二.使用方法
 -----------------------------------
-Server端
+        Server端
         PropertyConfigurator.configure("conf/log4j.properties");
         ServerSettings settings= new ServerSettings();
         settings.protocol= SocketEngine.WEBSOCKET_PROTOCOL;
@@ -16,7 +16,7 @@ Server端
         ServerSocketEngine engine=new ServerSocketEngine(settings);
         engine.registerExtension(new TestExtension());
         engine.start();
-Client端
+        Client端
         PropertyConfigurator.configure("conf/log4j.properties");
         WsClientSettings settings=new WsClientSettings();
         settings.url="ws://localhost:8001/websocket";
@@ -24,6 +24,7 @@ Client端
         WsClientSocketEngine socketEngine=new WsClientSocketEngine(settings,cmdFactoryCenter);
         socketEngine.registerExtension(new TestExtension());
         socketEngine.start();
+
 -----------------------------------
 三.网络协议
 -----------------------------------  
