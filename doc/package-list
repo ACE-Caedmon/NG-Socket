@@ -2,15 +2,13 @@ com.ace.ng.boot
 com.ace.ng.codec
 com.ace.ng.codec.binary
 com.ace.ng.codec.encrypt
-com.ace.ng.constant
 com.ace.ng.dispatch
 com.ace.ng.dispatch.javassit
 com.ace.ng.dispatch.message
 com.ace.ng.dispatch.tcp
 com.ace.ng.dispatch.websocket
 com.ace.ng.event
-com.ace.ng.examples.client
-com.ace.ng.examples.server
+com.ace.ng.examples
 com.ace.ng.handler
 com.ace.ng.impl
 com.ace.ng.parse
