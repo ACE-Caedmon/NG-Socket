@@ -188,42 +188,42 @@ public class Session implements ISession{
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeByte(byte.class.cast(output));
+					buf.writeByte((byte)output);
 				}
 			});
 		}else if(clazz==short.class||clazz==Short.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeShort(short.class.cast(output));
+					buf.writeShort((short)output);
 				}
 			});
 		}else if(clazz==int.class||clazz==Integer.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeInt(int.class.cast(output));
+					buf.writeInt((int)output);
 				}
 			});
 		}else if(clazz==float.class||clazz==Float.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeFloat(Float.class.cast(output));
+					buf.writeFloat((float)output);
 				}
 			});
 		}else if(clazz==double.class||clazz==Double.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeDouble(Double.class.cast(output));
+					buf.writeDouble((double)output);
 				}
 			});
 		}else if(clazz==long.class||clazz==Long.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeLong(Long.class.cast(output));
+					buf.writeLong((long)output);
 				}
 			});
 		}else if(clazz==String.class){
@@ -236,8 +236,5 @@ public class Session implements ISession{
 		}else{
 			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
 		}
-	}
-	public static void main(String args[]){
-
 	}
 }

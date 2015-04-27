@@ -6,7 +6,7 @@
 
     <groupId>com.ace</groupId>
     <artifactId>NG-Socket</artifactId>
-    <version>1.01-SNAPSHOT</version>
+    <version>1.10-SNAPSHOT</version>
     <build>
         <plugins>
             <plugin>
