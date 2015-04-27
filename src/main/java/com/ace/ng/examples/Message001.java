@@ -1,4 +1,4 @@
-package com.ace.ng.examples.server;
+package com.ace.ng.examples;
 import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.Output;
 

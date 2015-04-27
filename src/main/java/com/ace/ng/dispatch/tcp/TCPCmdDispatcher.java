@@ -5,8 +5,8 @@
  * */
 package com.ace.ng.dispatch.tcp;
 
+import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.CmdTaskFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 @Sharable
 public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
 	private static final Logger log = LoggerFactory.getLogger(TCPCmdDispatcher.class);
-	private CmdTaskFactory<?> taskFactory;
-	public TCPCmdDispatcher(CmdTaskFactory<?> taskFactory){
-		this.taskFactory=taskFactory;
+	private CmdFactoryCenter cmdFactoryCenter;
+	public TCPCmdDispatcher(CmdFactoryCenter cmdFactoryCenter){
+		this.cmdFactoryCenter=cmdFactoryCenter;
 	}
     /**
      * 连接断开是会调用此方法，方法会将Session相关信息移除，并且从Channel删除保存的Session对象
@@ -53,7 +53,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 	protected void channelRead0(ChannelHandlerContext ctx, CmdHandler handler)
 			throws Exception {
 		ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-		taskFactory.executeCmd(session,handler);
+		cmdFactoryCenter.executeCmd(session,handler);
 	}
     /**
      * 连接创建时会调用此方法，此时会负责创建ISession,并且为ISession分配一个Actor
@@ -62,7 +62,7 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
 	@Override
 	public void channelActive(final ChannelHandlerContext ctx) throws Exception {
 		final ISession session=new Session(ctx.channel());
-		taskFactory.executeCmd(session, new CmdHandler() {
+		cmdFactoryCenter.executeCmd(session, new CmdHandler() {
 			@Override
 			public void execute(Object user) {
 				ctx.channel().attr(Session.SESSION_KEY).set(session);

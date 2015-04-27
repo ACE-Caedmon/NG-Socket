@@ -1,17 +1,19 @@
 package com.ace.ng.codec;
 
+import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.binary.BinaryPacket;
+import com.ace.ng.dispatch.CmdHandlerFactory;
 import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
 import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.utils.CommonUtils;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import javassist.*;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by Administrator on 2015/4/25.
@@ -28,6 +31,36 @@ public class BinaryCodecApi {
     private static Logger log= LoggerFactory.getLogger(BinaryCodecApi.class);
     private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<Short,HandlerPropertySetter>(100);
     private static ClassPool classPool=ClassPool.getDefault();
+    public static class EncryptBinaryPacket {
+        public byte[] content;
+        public int passwordIndex;
+        public boolean isEncrypt;
+    }
+    public static EncryptBinaryPacket encodeContent(OutputPacket output,Channel channel){
+        boolean isEncrypt=false;
+        ISession session=channel.attr(Session.SESSION_KEY).get();
+        if(session.containsAttribute(Session.NEED_ENCRYPT)){
+            isEncrypt=session.getAttribute(Session.NEED_ENCRYPT);
+        }
+        ByteBuf buf=PooledByteBufAllocator.DEFAULT.buffer();
+        buf.writeShort(output.getCmd());
+        CustomBuf content=new ByteCustomBuf(buf);
+        output.getOutput().encode(content);
+        byte[] dst=new byte[buf.readableBytes()];
+        buf.readBytes(dst);
+        int passwordIndex=new Random().nextInt(256);
+        if(isEncrypt){
+            List<Short> passports=session.getAttribute(Session.PASSPORT);
+            short passport=passports.get(passwordIndex);//根据索引获取密码
+            String secretKey=channel.attr(Session.SECRRET_KEY).get();
+            BinaryEncryptUtil.encode(dst, dst.length, secretKey, passport);//加密
+        }
+        EncryptBinaryPacket packet=new EncryptBinaryPacket();
+        packet.content=dst;
+        packet.passwordIndex=passwordIndex;
+        packet.isEncrypt=isEncrypt;
+        return packet;
+    }
     public static ByteBuf decodeContent(BinaryPacket packet,ChannelHandlerContext ctx){
         ByteBuf content=packet.getContent();
         short length=(short)content.readableBytes();
@@ -44,7 +77,7 @@ public class BinaryCodecApi {
             short index = (short) (entryptOffset < 0 ? (256 + entryptOffset): entryptOffset);//获取密码表索引
             List<Short> passportList=session.getAttribute(Session.PASSPORT);//得到密码表集合
             short passport=passportList.get(index);//得到密码
-            String secretKey=ctx.attr(Session.SECRRET_KEY).get();
+            String secretKey=ctx.channel().attr(Session.SECRRET_KEY).get();
             BinaryEncryptUtil.decode(dst, dst.length, secretKey, passport);//解密
             bufForDecode.writeBytes(dst);
         }else {
@@ -52,27 +85,26 @@ public class BinaryCodecApi {
         }
         return bufForDecode;
     }
-    public static CmdHandler decodeCmdHandler(HandlerFactory handlerFactory,ByteBuf bufForDecode){
+    public static CmdHandler decodeCmdHandler(CmdFactoryCenter cmdFactoryCenter,ByteBuf bufForDecode){
         short cmd=bufForDecode.readShort();
-        CmdHandler<?> handler=handlerFactory.getHandler(cmd);
+        CmdHandler<?> handler=cmdFactoryCenter.getCmdHandler(cmd);
         if(handler!=null){
             try {
                 CustomBuf contentBuf=new ByteCustomBuf(bufForDecode);//将ByteBuf作为构造参数传入自定义的装饰器
                 HandlerPropertySetter propertySetter=getHandlerPropertySetter(cmd, handler);
                 propertySetter.setHandlerProperties(contentBuf,handler);
-                //handler.decode(contentBuf);
                 if(bufForDecode.isReadable()){
                     log.warn("数据包内容未读完:cmd={},remain={}", cmd, bufForDecode.readableBytes());
                 }
             } catch (Exception e) {
-                log.error("解码异常:cmd={}", cmd, e);
                 bufForDecode.skipBytes(bufForDecode.readableBytes());
+                throw new RuntimeException("解码异常(cmd = "+cmd+")",e);
+
             }
         }else{
-            log.error("未知指令:cmd ={},length={}", cmd, bufForDecode.readableBytes());
             bufForDecode.skipBytes(bufForDecode.readableBytes());
+            throw new NullPointerException("未知指令(cmd = "+cmd+")");
         }
-        bufForDecode.release();
         return handler;
     }
     private static HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler<?> handler) throws  Exception{
@@ -139,9 +171,6 @@ public class BinaryCodecApi {
                             break;
                         case "String":
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
-                            break;
-                        case "Builder":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readProtoBuf());");
                             break;
                         default:
                             String builderClassFullName=typeAllName.replaceAll("\\$",".");

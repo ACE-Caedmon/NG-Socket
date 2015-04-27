@@ -1,7 +1,6 @@
 package com.ace.ng.dispatch.websocket;
 
 import com.ace.ng.codec.binary.BinaryPacket;
-import com.ace.ng.dispatch.message.HandlerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
@@ -14,7 +13,7 @@ import java.util.List;
 /**
  * Created by ChenLong on 2015/4/14.
  */
-public class WebSocketPacketDecoder extends MessageToMessageDecoder<WebSocketFrame>{
+public class WsPacketDecoder extends MessageToMessageDecoder<WebSocketFrame>{
     @Override
     protected void decode(ChannelHandlerContext ctx, WebSocketFrame frame, List<Object> out) throws Exception {
         if(frame instanceof BinaryWebSocketFrame){

@@ -14,14 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HandlerFactory implements CmdHandlerFactory<Short,CmdHandler<?>> {
-	private static Logger logger=LoggerFactory.getLogger(HandlerFactory.class);
+public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHandler> {
+	private static Logger logger=LoggerFactory.getLogger(DefaultCmdHandlerFactory.class);
 	private Map<Short, String> messageHandlers;
 	private Map<Short, CmdHandlerCreator> handlerCreateorMap;
 	private static ClassPool classPool=ClassPool.getDefault();
-	public HandlerFactory(){
-		messageHandlers=new HashMap<Short, String>(100);
-		handlerCreateorMap=new HashMap<Short, CmdHandlerCreator>(100);
+	public DefaultCmdHandlerFactory(){
+		messageHandlers=new HashMap(100);
+		handlerCreateorMap=new HashMap(100);
 
 	}
 

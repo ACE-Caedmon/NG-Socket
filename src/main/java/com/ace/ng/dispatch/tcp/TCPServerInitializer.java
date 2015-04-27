@@ -5,12 +5,12 @@
 package com.ace.ng.dispatch.tcp;
 
 
-import com.ace.ng.codec.binary.BinaryDecoder;
-import com.ace.ng.codec.binary.BinaryEncoder;
-import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
-import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
+import com.ace.ng.boot.CmdFactoryCenter;
+import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
+import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
+import com.ace.ng.dispatch.CmdHandlerFactory;
+import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.CmdTaskFactory;
-import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.Session;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
@@ -21,25 +21,20 @@ import io.netty.handler.logging.LoggingHandler;
 @Sharable
 public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
 	private CmdTaskFactory cmdTaskFactory;
-    private HandlerFactory handlerFactory;
+    private CmdFactoryCenter cmdFactoryCenter;
 	private String secretKey;
-	public TCPServerInitializer(HandlerFactory handlerFactory,CmdTaskFactory cmdTaskFactory,String secretKey){
-		this.handlerFactory=handlerFactory;
-        this.cmdTaskFactory = cmdTaskFactory;
+	public TCPServerInitializer(CmdFactoryCenter cmdFactoryCenter,String secretKey){
+		this.cmdFactoryCenter=cmdFactoryCenter;
 		this.secretKey=secretKey;
 	}
 	@Override
 	protected void initChannel(SocketChannel ch) throws Exception {
-		//ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
-		 //IdleStateHandler idleStateHandler=new IdleStateHandler(60, 30, 0);
 		ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
-		//ch.pipeline().addLast(idleStateHandler);
-//		ch.pipeline().addLast(new ChannelEventHandler());
-		ch.pipeline().addLast(new BinaryDecoder());
-		ch.pipeline().addLast(new BinaryEncryptDecoder(handlerFactory));
-		ch.pipeline().addLast(new BinaryEncryptEncoder());
-		ch.pipeline().addLast(new BinaryEncoder());
-		ch.pipeline().addLast(new TCPCmdDispatcher(cmdTaskFactory));
+		ch.pipeline().addLast(new TCPBinaryDecoder());
+		ch.pipeline().addLast(new ServerBinaryEncryptDecoder(cmdFactoryCenter));
+		ch.pipeline().addLast(new ServerBinaryEncryptEncoder());
+		ch.pipeline().addLast(new TCPBinaryEncoder());
+		ch.pipeline().addLast(new TCPCmdDispatcher(cmdFactoryCenter));
 		ch.attr(Session.SECRRET_KEY).set(secretKey);
 		
 		

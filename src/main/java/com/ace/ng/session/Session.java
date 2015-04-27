@@ -94,17 +94,15 @@ public class Session implements ISession{
 		// TODO Auto-generated method stub
 		this.lastActiveTime=lastActiveTime;
 	}
-	private Future<?> send(short cmd, Output message, byte code) {
+	private Future<?> send(short cmd, Output output) {
 		if(channel.isActive()){
-			OutputPacket packet=new OutputPacket(cmd,message,code);
+			OutputPacket packet=new OutputPacket(cmd,output);
 			ChannelFuture future=channel.writeAndFlush(packet);
 			setLastActiveTime(System.currentTimeMillis());
 			return future;
 		}else{
 			return channel.newSucceededFuture();
 		}
-
-
 	}
 	@Override
 	public boolean containsAttribute(AttributeKey<?> key) {
@@ -131,10 +129,10 @@ public class Session implements ISession{
 		this.active=active;
 	}
 	@Override
-	public Future<?> disconnect(boolean immediately, short cmd,Output output,byte code) {
+	public Future<?> disconnect(boolean immediately, short cmd,Output output) {
 		Future<?> future=channel.newSucceededFuture();
 		if(channel.isActive()){
-			future=this.send(cmd, output, code);
+			future=this.send(cmd, output);
 			try {
 				if(immediately){
 					future.sync();
@@ -147,9 +145,6 @@ public class Session implements ISession{
 			}
 		}
 		return future;
-	}
-	public Future<?> disconnect(boolean immediately, short cmd,Output output) {
-		return disconnect(immediately,cmd,output,(byte)0);
 	}
 	@Override
 	public <T> void removeAttribute(AttributeKey<T> key) {
@@ -182,32 +177,67 @@ public class Session implements ISession{
 	public <T> void setAttribute(AttributeKey<T> key, T value) {
 		channel.attr(key).set(value);
 	}
-
 	@Override
-	public Future<?> send(short cmd, byte code) {
-		return send(cmd,Output.NULL_CONTENT_OUTPUT,code);
-	}
-
-	@Override
-	public Future<?> send(short cmd, Object output,byte code) {
+	public Future<?> send(short cmd, final Object output) {
+		Class clazz=output.getClass();
 		if(output instanceof Output){
 			return send(cmd,(Output)output);
 		}else if(output instanceof AbstractMessage.Builder){
 			return send(cmd,(AbstractMessage.Builder)output);
+		}else if(clazz==byte.class||clazz==Byte.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeByte(byte.class.cast(output));
+				}
+			});
+		}else if(clazz==short.class||clazz==Short.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeShort(short.class.cast(output));
+				}
+			});
+		}else if(clazz==int.class||clazz==Integer.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeInt(int.class.cast(output));
+				}
+			});
+		}else if(clazz==float.class||clazz==Float.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeFloat(Float.class.cast(output));
+				}
+			});
+		}else if(clazz==double.class||clazz==Double.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeDouble(Double.class.cast(output));
+				}
+			});
+		}else if(clazz==long.class||clazz==Long.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeLong(Long.class.cast(output));
+				}
+			});
+		}else if(clazz==String.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeString(String.valueOf(output));
+				}
+			});
 		}else{
 			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
 		}
 	}
-	@Override
-	public Future<?> send(short cmd, Object output) {
-		byte b=0;
-		if(output instanceof Output){
-			return send(cmd,(Output)output,b);
-		}else if(output instanceof AbstractMessage.Builder){
-			return send(cmd,(AbstractMessage.Builder)output,b);
-		}else{
-			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
-		}
-	}
+	public static void main(String args[]){
 
+	}
 }

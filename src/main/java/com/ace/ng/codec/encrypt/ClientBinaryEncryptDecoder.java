@@ -1,41 +1,27 @@
-package com.ace.ng.client;
+package com.ace.ng.codec.encrypt;
 
+import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.codec.BinaryCodecApi;
-import com.ace.ng.codec.ByteCustomBuf;
-import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.codec.NotDecode;
-import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.binary.BinaryPacket;
-import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
-import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
+import com.ace.ng.dispatch.CmdHandlerFactory;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.HandlerFactory;
-import com.ace.ng.session.ISession;
-import com.ace.ng.session.Session;
-import com.ace.ng.utils.CommonUtils;
-import com.google.protobuf.AbstractMessage;
+import com.ace.ng.dispatch.message.DefaultCmdHandlerFactory;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Administrator on 2015/4/25.
  */
 public class ClientBinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPacket> {
     private static final Logger log = LoggerFactory.getLogger(ClientBinaryEncryptDecoder.class);
-    private boolean incred=false;//是否已自增
-    private HandlerFactory handlerFactory;
-
-    public ClientBinaryEncryptDecoder(HandlerFactory handlerFactory){
-        this.handlerFactory=handlerFactory;
+    private CmdFactoryCenter cmdFactoryCenter;
+    public ClientBinaryEncryptDecoder(CmdFactoryCenter cmdFactoryCenter){
+        this.cmdFactoryCenter=cmdFactoryCenter;
     }
     /**
      * 负责对数据包进行解码
@@ -47,7 +33,7 @@ public class ClientBinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPa
     protected void decode(ChannelHandlerContext ctx, BinaryPacket packet,
                           List<Object> out) throws Exception {
         ByteBuf bufForDecode=BinaryCodecApi.decodeContent(packet, ctx);
-        CmdHandler cmdHandler=BinaryCodecApi.decodeCmdHandler(handlerFactory, bufForDecode);
+        CmdHandler cmdHandler=BinaryCodecApi.decodeCmdHandler(cmdFactoryCenter, bufForDecode);
         out.add(cmdHandler);
     }
 

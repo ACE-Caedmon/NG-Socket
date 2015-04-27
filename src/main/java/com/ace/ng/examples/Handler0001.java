@@ -1,4 +1,4 @@
-package com.ace.ng.examples.server;
+package com.ace.ng.examples;
 
 import com.ace.ng.dispatch.message.Cmd;
 import com.ace.ng.impl.SessionCmdHandler;
@@ -17,9 +17,9 @@ public class Handler0001 extends SessionCmdHandler {
 
     @Override
     public void execute(ISession user) {
-        System.out.println("接受到客户端消息:" +content);
+        System.out.println("接收消息:" +content);
         Message001 message001=new Message001();
-        message001.setContent("Message from Server");
+        message001.setContent(user.getClientAddress());
         user.send((short)1,message001);
     }
 }

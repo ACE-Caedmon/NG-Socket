@@ -1,6 +1,9 @@
 package com.ace.ng.codec;
 
 import com.google.protobuf.AbstractMessage.Builder;
+
+import java.util.List;
+
 /**
  * @author Chenlong
  * 缓冲区包装装饰器类，提供在Bytebuf之上更常用的接口

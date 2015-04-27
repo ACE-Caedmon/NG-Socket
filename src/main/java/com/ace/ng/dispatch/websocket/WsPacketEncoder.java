@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by Administrator on 2015/4/14.
  */
-public class WebSocketPacketEncoder extends MessageToMessageEncoder<BinaryPacket> {
+public class WsPacketEncoder extends MessageToMessageEncoder<BinaryPacket> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, BinaryPacket packet, List<Object> out) throws Exception {

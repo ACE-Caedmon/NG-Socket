@@ -1,9 +1,8 @@
 package com.ace.ng.handler;
 
 
-import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.PassportTable;
-import com.ace.ng.constant.VarConst;
+import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.event.IEventHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;

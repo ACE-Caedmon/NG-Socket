@@ -1,10 +1,9 @@
 package com.ace.ng.dispatch.websocket;
 
-import com.ace.ng.codec.encrypt.BinaryEncryptDecoder;
-import com.ace.ng.codec.encrypt.BinaryEncryptEncoder;
+import com.ace.ng.boot.CmdFactoryCenter;
+import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
+import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
 import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.CmdTaskFactory;
-import com.ace.ng.dispatch.message.HandlerFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
@@ -22,23 +21,21 @@ import io.netty.util.CharsetUtil;
 /**
  * Created by ChenLong on 2015/4/3.
  */
-public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
+public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
 
     private static final String WEBSOCKET_PATH = "/websocket";
     private WebSocketServerHandshaker handshaker;
-    private HandlerFactory handlerFactory;
-    private CmdTaskFactory<?> taskFactory;
-    public WebSocketCmdDispatcher(HandlerFactory handlerFactory,CmdTaskFactory<?> taskFactory){
-        this.taskFactory=taskFactory;
-        this.handlerFactory=handlerFactory;
+    private CmdFactoryCenter cmdFactoryCenter;
+    public WsServerCmdDispatcher(CmdFactoryCenter cmdFactoryCenter){
+        this.cmdFactoryCenter=cmdFactoryCenter;
     }
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=new Session(ctx.channel());
-        taskFactory.executeCmd(session, new CmdHandler() {
+        ctx.channel().attr(Session.SESSION_KEY).set(session);
+        cmdFactoryCenter.executeCmd(session, new CmdHandler() {
             @Override
             public void execute(Object user) {
-                ctx.channel().attr(Session.SESSION_KEY).set(session);
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
             }
         });
@@ -67,7 +64,7 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
             }
         }else if(msg instanceof CmdHandler){
             ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-            taskFactory.executeCmd(session, (CmdHandler)msg);
+            cmdFactoryCenter.executeCmd(session, (CmdHandler)msg);
         }
     }
     @Override
@@ -88,7 +85,7 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
         }
         // Send the demo page and favicon.ico
         if ("/".equals(req.getUri())) {
-            ByteBuf content = WebSocketServerIndexPage.getContent(getWebSocketLocation(req));
+            ByteBuf content = WsServerIndexPage.getContent(getWebSocketLocation(req));
             FullHttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
 
             res.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=UTF-8");
@@ -112,10 +109,10 @@ public class WebSocketCmdDispatcher extends SimpleChannelInboundHandler<Object>{
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
         } else {
             handshaker.handshake(ctx.channel(), req);
-            ctx.pipeline().addAfter("wsdecoder", "decoder1", new WebSocketPacketDecoder());
-            ctx.pipeline().addAfter("decoder1", "decoder2", new BinaryEncryptDecoder(handlerFactory));
-            ctx.pipeline().addAfter("wsencoder", "encoder2", new WebSocketPacketEncoder());
-            ctx.pipeline().addAfter("encoder2", "encoder1", new BinaryEncryptEncoder());
+            ctx.pipeline().addAfter("wsdecoder", "decoder1", new WsPacketDecoder());
+            ctx.pipeline().addAfter("decoder1", "decoder2", new ServerBinaryEncryptDecoder(cmdFactoryCenter));
+            ctx.pipeline().addAfter("wsencoder", "encoder2", new WsPacketEncoder());
+            ctx.pipeline().addAfter("encoder2", "encoder1", new ServerBinaryEncryptEncoder());
 
 
         }

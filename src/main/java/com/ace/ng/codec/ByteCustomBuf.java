@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Chenlong
  * ByteBuf 封装类，提供基本对象读取写入缓冲流的方法
