@@ -52,9 +52,9 @@ CmdHandler解码有两种方式。
         @Override
         public void execute(ISession playerOnline) {
             System.out.println("Server recived:"+content);
-            Message001 message001=new Message001((short)1);
+            Message001 message001=new Message001();
             message001.setContent("content");
-            playerOnline.send(message001);
+            playerOnline.send((short)1,message001);
         }
     }
 2.使用系统提供的自动解码
@@ -70,9 +70,9 @@ CmdHandler解码有两种方式。
         @Override
         public void execute(ISession playerOnline) {
             System.out.println("Server recived:"+content);
-            Message001 message001=new Message001((short)1);
+            Message001 message001=new Message001();
             message001.setContent("content");
-            playerOnline.send(message001);
+            playerOnline.send((short)1,message001);
         }
     }
 在上述代码中，不用重写decode,只需要对需要解码赋值的属性提供set方法,框架就会自动帮你解码。不需要解码的属性,加一个@NotDecode的标记就可以了。
