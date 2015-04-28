@@ -64,7 +64,7 @@ CmdHandler解码有两种方式。
         private String content;
         @NotDecode
         private int id;
-        public void setMessage(String content) {
+        public void setContent(String content) {
             this.content = content;
         }
         @Override
