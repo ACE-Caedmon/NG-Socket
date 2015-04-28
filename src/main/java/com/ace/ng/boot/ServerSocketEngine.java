@@ -43,10 +43,10 @@ public class ServerSocketEngine extends SocketEngine{
             ChannelInitializer<SocketChannel> initializer=null;
             switch (settings.protocol.toLowerCase()){
                 case TCP_PROTOCOL:
-                    initializer=new TCPServerInitializer(cmdFactoryCenter,settings.secretKey);
+                    initializer=new TCPServerInitializer(cmdFactoryCenter,settings);
                     break;
                 case WEBSOCKET_PROTOCOL:
-                    initializer=new WsServerInitalizer(cmdFactoryCenter,settings.secretKey);
+                    initializer=new WsServerInitalizer(cmdFactoryCenter,settings);
                     break;
             }
 

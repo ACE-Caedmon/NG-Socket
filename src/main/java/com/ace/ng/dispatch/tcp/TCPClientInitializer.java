@@ -1,6 +1,7 @@
 package com.ace.ng.dispatch.tcp;
 
 import com.ace.ng.boot.CmdFactoryCenter;
+import com.ace.ng.boot.TCPClientSettings;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
 import com.ace.ng.dispatch.CmdHandlerFactory;
@@ -17,20 +18,23 @@ import io.netty.handler.logging.LoggingHandler;
  */
 public class TCPClientInitializer extends ChannelInitializer<SocketChannel>{
     private CmdFactoryCenter cmdFactoryCenter;
-    private String secretKey;
-    public TCPClientInitializer(CmdFactoryCenter cmdFactoryCenter,String secretKey){
+    private TCPClientSettings settings;
+    public TCPClientInitializer(CmdFactoryCenter cmdFactoryCenter,TCPClientSettings settings){
         this.cmdFactoryCenter=cmdFactoryCenter;
-        this.secretKey=secretKey;
+        this.settings=settings;
     }
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
-        ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+        if(settings.logging){
+            ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+        }
+
         ch.pipeline().addLast(new TCPBinaryDecoder());
         ch.pipeline().addLast(new ServerBinaryEncryptDecoder(cmdFactoryCenter));
         ch.pipeline().addLast(new ServerBinaryEncryptEncoder());
         ch.pipeline().addLast(new TCPBinaryEncoder());
         ch.pipeline().addLast(new TCPCmdDispatcher(cmdFactoryCenter));
-        ch.attr(Session.SECRRET_KEY).set(secretKey);
+        ch.attr(Session.SECRRET_KEY).set(settings.secretKey);
 
 
     }

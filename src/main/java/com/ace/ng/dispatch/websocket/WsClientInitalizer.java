@@ -31,7 +31,9 @@ public class WsClientInitalizer extends ChannelInitializer<SocketChannel>{
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ch.config().setAllocator(PooledByteBufAllocator.DEFAULT);
-        ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+        if(settings.logging){
+            ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
+        }
         ch.pipeline().addLast(new HttpClientCodec());
         ch.pipeline().addLast(new HttpObjectAggregator(65535));
         URI uri=URI.create(settings.url);

@@ -14,4 +14,5 @@ public class TCPClientSettings {
     public boolean encrypt=false;
     public int workerThreadSize=Runtime.getRuntime().availableProcessors();
     public String secretKey="ng-socket";
+    public boolean logging=false;
 }

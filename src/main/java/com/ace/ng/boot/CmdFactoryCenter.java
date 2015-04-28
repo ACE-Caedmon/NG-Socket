@@ -70,7 +70,7 @@ public abstract class CmdFactoryCenter<U> {
                     if(user==null){
                         ((CmdHandler<ISession>)handler).execute(session);
                     }else{
-                        handler.execute(getUser(session));
+                        handler.execute(user);
                     }
 
                 }catch (Throwable cause){

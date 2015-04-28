@@ -9,17 +9,35 @@ import com.ace.ng.session.ISession;
  */
 @Cmd(id=1,desc="测试用")
 public class Handler0001 extends SessionCmdHandler {
+    private long playerId;
     private String content;
-
+    private int gold;
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public long getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(long playerId) {
+        this.playerId = playerId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public int getGold() {
+        return gold;
+    }
+
+    public void setGold(int gold) {
+        this.gold = gold;
     }
 
     @Override
     public void execute(ISession user) {
         System.out.println("接收消息:" +content);
-        Message001 message001=new Message001();
-        message001.setContent(user.getClientAddress());
-        user.send((short)1,message001);
     }
 }

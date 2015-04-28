@@ -40,7 +40,7 @@ public interface ISession {
 	 * */
 	Future<?> disconnect(boolean immediately);
 
-	Future<?> disconnect(boolean immediately, short cmd,Output output);
+	Future<?> disconnect(boolean immediately, short cmd,Object output);
 	/**
 	 * @return session最后活动时间
 	 * */

@@ -20,4 +20,6 @@ public class ServerSettings {
     public boolean encrypt=false;
 
     public String secretKey="ng-socket";
+    /**是否加入LoggingHandler*/
+    public boolean logging=false;
 }

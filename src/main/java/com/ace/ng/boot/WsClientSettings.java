@@ -17,4 +17,5 @@ public class WsClientSettings {
     public String subProtocol;
     public int workerThreadSize=Runtime.getRuntime().availableProcessors();
     public String secretKey="ng-socket";
+    public boolean logging=false;
 }

@@ -29,6 +29,7 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     public WsServerCmdDispatcher(CmdFactoryCenter cmdFactoryCenter){
         this.cmdFactoryCenter=cmdFactoryCenter;
     }
+
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=new Session(ctx.channel());
@@ -44,13 +45,9 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-        session.getActor().execute(new Runnable() {
-            public void run() {
-                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
-                session.clear();
-                session.noticeCloseComplete();
-            }
-        });
+        SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
+        session.clear();
+        session.noticeCloseComplete();
     }
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {
@@ -111,8 +108,8 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
             handshaker.handshake(ctx.channel(), req);
             ctx.pipeline().addAfter("wsdecoder", "decoder1", new WsPacketDecoder());
             ctx.pipeline().addAfter("decoder1", "decoder2", new ServerBinaryEncryptDecoder(cmdFactoryCenter));
-            ctx.pipeline().addAfter("wsencoder", "encoder2", new WsPacketEncoder());
-            ctx.pipeline().addAfter("encoder2", "encoder1", new ServerBinaryEncryptEncoder());
+            ctx.pipeline().addAfter("wsencoder", "encoder1", new WsPacketEncoder());
+            ctx.pipeline().addAfter("encoder1", "encoder2", new ServerBinaryEncryptEncoder());
 
 
         }

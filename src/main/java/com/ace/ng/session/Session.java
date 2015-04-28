@@ -129,7 +129,7 @@ public class Session implements ISession{
 		this.active=active;
 	}
 	@Override
-	public Future<?> disconnect(boolean immediately, short cmd,Output output) {
+	public Future<?> disconnect(boolean immediately, short cmd,Object output) {
 		Future<?> future=channel.newSucceededFuture();
 		if(channel.isActive()){
 			future=this.send(cmd, output);
@@ -183,7 +183,7 @@ public class Session implements ISession{
 		if(output instanceof Output){
 			return send(cmd,(Output)output);
 		}else if(output instanceof AbstractMessage.Builder){
-			return send(cmd,(AbstractMessage.Builder)output);
+			return send(cmd,new ProtoBufOutput((AbstractMessage.Builder)output));
 		}else if(clazz==byte.class||clazz==Byte.class){
 			return send(cmd, new Output() {
 				@Override

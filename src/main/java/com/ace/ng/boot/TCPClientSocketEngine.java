@@ -44,7 +44,7 @@ public class TCPClientSocketEngine extends SocketEngine{
             workerGroup=this.eventExecutors;
         }
         try {
-            ChannelInitializer<SocketChannel> initializer=new TCPClientInitializer(this.cmdFactoryCenter,settings.secretKey);;
+            ChannelInitializer<SocketChannel> initializer=new TCPClientInitializer(this.cmdFactoryCenter,settings);;
             Bootstrap b = new Bootstrap();
             b.group(workerGroup)
                     .channel(NioSocketChannel.class)

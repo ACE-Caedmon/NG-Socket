@@ -13,6 +13,7 @@ import com.ace.ng.utils.CommonUtils;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import javassist.*;
@@ -70,7 +71,8 @@ public class BinaryCodecApi {
         ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         byte entryptOffset=content.readByte();
         hasReadLength+=1;
-        ByteBuf bufForDecode= PooledByteBufAllocator.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
+        //ByteBuf bufForDecode= Unpooled.buffer();//.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
+        ByteBuf bufForDecode=ctx.channel().config().getAllocator().buffer();
         if(isEncrypt){
             byte[] dst=new byte[length-hasReadLength];//存储包体
             content.readBytes(dst);//读取包体内容

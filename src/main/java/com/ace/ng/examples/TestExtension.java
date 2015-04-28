@@ -20,7 +20,7 @@ public class TestExtension extends Extension {
                 entity.send((short) 1, new Output() {
                     @Override
                     public void encode(CustomBuf buf) {
-                        buf.writeString("WsClient connected");
+                        buf.writeLong(1);
                     }
                 });
             }
