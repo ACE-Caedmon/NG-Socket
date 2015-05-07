@@ -84,12 +84,6 @@ public interface ISession {
 	 * */
 	void clear();
 
-    void waitForCloseComplete() throws InterruptedException;
-
-    void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException;
-
-    void noticeCloseComplete();
-
 	void setActor(IActor actor);
 
 	IActor getActor();

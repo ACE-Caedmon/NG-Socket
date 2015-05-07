@@ -4,9 +4,7 @@ import com.ace.ng.codec.binary.BinaryPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.handler.codec.http.websocketx.*;
 
 import java.util.List;
 
@@ -21,6 +19,11 @@ public class WsPacketDecoder extends MessageToMessageDecoder<WebSocketFrame>{
             BinaryPacket packet=new BinaryPacket(in);
             in.retain();
             out.add(packet);
+        }else if(frame instanceof PingWebSocketFrame){
+            out.add(frame.retain());
+        }
+        else if(frame instanceof CloseWebSocketFrame){
+            out.add(frame.retain());
         }if(frame instanceof TextWebSocketFrame){
             throw new UnsupportedOperationException("Only support BinaryWebSocketFrame");
         }

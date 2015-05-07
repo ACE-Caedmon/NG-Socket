@@ -34,7 +34,9 @@ public class ClientBinaryEncryptDecoder extends MessageToMessageDecoder<BinaryPa
                           List<Object> out) throws Exception {
         ByteBuf bufForDecode=BinaryCodecApi.decodeContent(packet, ctx);
         CmdHandler cmdHandler=BinaryCodecApi.decodeCmdHandler(cmdFactoryCenter, bufForDecode);
-        out.add(cmdHandler);
+        if(cmdHandler!=null){
+            out.add(cmdHandler);
+        }
     }
 
 }

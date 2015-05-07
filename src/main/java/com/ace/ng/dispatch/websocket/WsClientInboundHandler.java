@@ -21,11 +21,11 @@ import io.netty.util.CharsetUtil;
 /**
  * Created by Administrator on 2015/4/25.
  */
-public class WsClientCmdDispatcher extends SimpleChannelInboundHandler{
+public class WsClientInboundHandler extends SimpleChannelInboundHandler{
     private CmdFactoryCenter cmdFactoryCenter;
     private WebSocketClientHandshaker handshaker;
     private ChannelPromise handshakeFuture;
-    public WsClientCmdDispatcher(WebSocketClientHandshaker handshaker, CmdFactoryCenter cmdFactoryCenter){
+    public WsClientInboundHandler(WebSocketClientHandshaker handshaker, CmdFactoryCenter cmdFactoryCenter){
         this.handshaker=handshaker;
         this.cmdFactoryCenter=cmdFactoryCenter;
     }
@@ -48,7 +48,7 @@ public class WsClientCmdDispatcher extends SimpleChannelInboundHandler{
             public void run() {
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
                 session.clear();
-                session.noticeCloseComplete();
+                session.getActor().releaseExecutor();
             }
         });
     }

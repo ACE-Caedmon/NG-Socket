@@ -3,7 +3,6 @@ package com.ace.ng.codec;
 import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.binary.BinaryPacket;
-import com.ace.ng.dispatch.CmdHandlerFactory;
 import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
 import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
 import com.ace.ng.dispatch.message.CmdHandler;
@@ -20,22 +19,26 @@ import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Administrator on 2015/4/25.
  */
 public class BinaryCodecApi {
     private static Logger log= LoggerFactory.getLogger(BinaryCodecApi.class);
-    private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<Short,HandlerPropertySetter>(100);
+    private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<>(100);
     private static ClassPool classPool=ClassPool.getDefault();
+    private static Map<String,ProtoCacheElement> protoElementCache =new HashMap<>();
+    private static final Object lock=new Object();
     public static class EncryptBinaryPacket {
         public byte[] content;
         public int passwordIndex;
         public boolean isEncrypt;
+    }
+    public static class ProtoCacheElement{
+        public String builderClassName;
+        public String protoClassName;
     }
     public static EncryptBinaryPacket encodeContent(OutputPacket output,Channel channel){
         boolean isEncrypt=false;
@@ -71,8 +74,8 @@ public class BinaryCodecApi {
         ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         byte entryptOffset=content.readByte();
         hasReadLength+=1;
-        //ByteBuf bufForDecode= Unpooled.buffer();//.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
-        ByteBuf bufForDecode=ctx.channel().config().getAllocator().buffer();
+        ByteBuf bufForDecode= Unpooled.buffer();//.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
+        //ByteBuf bufForDecode=ctx.channel().config().getAllocator().buffer();
         if(isEncrypt){
             byte[] dst=new byte[length-hasReadLength];//存储包体
             content.readBytes(dst);//读取包体内容
@@ -105,7 +108,7 @@ public class BinaryCodecApi {
             }
         }else{
             bufForDecode.skipBytes(bufForDecode.readableBytes());
-            throw new NullPointerException("未知指令(cmd = "+cmd+")");
+            log.warn("未知指令(cmd = " + cmd + ")");
         }
         return handler;
     }
@@ -115,9 +118,13 @@ public class BinaryCodecApi {
         if(handlerPropertySetter==null){
             String handlerClassName=handler.getClass().getName();
             CtClass tempHandler=classPool.get(handlerClassName);
-            CtClass handlerPropertySetterClass=classPool.getAndRename(NoOpHandlerPropertySetter.class.getName(),
-                    NoOpHandlerPropertySetter.class.getName()+"Proxy$"+cmd );
-            synchronized (handlerPropertySetterClass){
+            String handlerProxyName=NoOpHandlerPropertySetter.class.getName()+"Proxy$"+cmd;
+            CtClass handlerPropertySetterClass=classPool.getOrNull(handlerProxyName);
+            if(handlerPropertySetterClass==null){
+                handlerPropertySetterClass=classPool.getAndRename(NoOpHandlerPropertySetter.class.getName(),
+                        handlerProxyName);
+            }
+            synchronized (lock){
                 //双重检查
                 if((handlerPropertySetter=handlerPropertySetterMap.get(cmd))==null){
                     CtMethod setPropertiesMethod=handlerPropertySetterClass.
@@ -127,8 +134,8 @@ public class BinaryCodecApi {
                     }else{//自动调用set方法解码
                         addAutoDecodeSrc(setPropertiesMethod,tempHandler,handlerClassName);
                     }
-                    handlerPropertySetter=(HandlerPropertySetter)
-                            handlerPropertySetterClass.toClass().newInstance();
+                    Class clazz=handlerPropertySetterClass.toClass();
+                    handlerPropertySetter=(HandlerPropertySetter)clazz.newInstance();
                     handlerPropertySetterMap.put(cmd,handlerPropertySetter);
                 }
             }
@@ -163,7 +170,7 @@ public class BinaryCodecApi {
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readByte());");
                             break;
                         case "boolean":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readBoolean();");
+                            setPropertiesMethod.insertAfter(setMethodString+"($1.readBoolean());");
                             break;
                         case "float":
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readFloat());");
@@ -175,17 +182,32 @@ public class BinaryCodecApi {
                             setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
                             break;
                         default:
-                            String builderClassFullName=typeAllName.replaceAll("\\$",".");
-                            if(AbstractMessage.Builder.class.isAssignableFrom(Class.forName(typeAllName))){
-                                int lastIndex=builderClassFullName.lastIndexOf("Builder");
-                                String protoClassName=builderClassFullName.substring(0, lastIndex);
-                                protoClassName=protoClassName.replaceAll("\\$",".");
-
-                                setPropertiesMethod.insertAfter(setMethodString+"(("+builderClassFullName+")$1.readProtoBuf("+protoClassName+"newBuilder()));");
+                            // builderClassName Builder的ClassName
+                            //protoClassName Proto的ClassName
+                            String builderClassName=null;
+                            boolean firstProto=true;
+                            String protoClassName=null;
+                            if(protoElementCache.containsKey(typeAllName)){
+                                builderClassName= protoElementCache.get(typeAllName).builderClassName;
+                                firstProto=false;
                             }else{
-                                throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
+                                builderClassName=typeAllName.replaceAll("\\$",".");
+                                if(AbstractMessage.Builder.class.isAssignableFrom(Class.forName(typeAllName))) {
+                                    int lastIndex = builderClassName.lastIndexOf("Builder");
+                                    protoClassName = builderClassName.substring(0, lastIndex);
+                                    protoClassName = protoClassName.replaceAll("\\$", ".");
+                                    firstProto=true;
+                                }else{
+                                    throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
+                                }
                             }
-
+                            setPropertiesMethod.insertAfter(setMethodString+"(("+builderClassName+")$1.readProtoBuf("+protoClassName+"newBuilder()));");
+                            if(firstProto){
+                                ProtoCacheElement element=new ProtoCacheElement();
+                                element.builderClassName=builderClassName;
+                                element.protoClassName=protoClassName;
+                                protoElementCache.put(typeAllName, element);
+                            }
                     }
 
                 }

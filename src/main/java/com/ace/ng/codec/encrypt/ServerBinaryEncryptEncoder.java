@@ -59,6 +59,7 @@ import java.util.Random;
  * */
 @Sharable
 public class ServerBinaryEncryptEncoder extends MessageToMessageEncoder<OutputPacket> {
+    private static Logger log=LoggerFactory.getLogger(ServerBinaryEncryptEncoder.class);
     @Override
 	protected void encode(ChannelHandlerContext ctx, OutputPacket output, List<Object> out)
 			throws Exception {
@@ -69,6 +70,5 @@ public class ServerBinaryEncryptEncoder extends MessageToMessageEncoder<OutputPa
         buf.writeBytes(encryptBinaryPacket.content);//写入dst
         BinaryPacket packet=new BinaryPacket(buf);
         out.add(packet);
-
 	}
 }

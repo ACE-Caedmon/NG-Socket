@@ -17,16 +17,19 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.CharsetUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by ChenLong on 2015/4/3.
  */
-public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
+public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
 
     private static final String WEBSOCKET_PATH = "/websocket";
     private WebSocketServerHandshaker handshaker;
     private CmdFactoryCenter cmdFactoryCenter;
-    public WsServerCmdDispatcher(CmdFactoryCenter cmdFactoryCenter){
+    private static final Logger log= LoggerFactory.getLogger(WsServerInboundHandler.class);
+    public WsServerInboundHandler(CmdFactoryCenter cmdFactoryCenter){
         this.cmdFactoryCenter=cmdFactoryCenter;
     }
 
@@ -45,20 +48,20 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-        SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
-        session.clear();
-        session.noticeCloseComplete();
+        cmdFactoryCenter.executeCmd(session, new CmdHandler() {
+            @Override
+            public void execute(Object user) {
+                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
+                session.clear();
+            }
+        });
     }
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof FullHttpRequest) {
             handleHttpRequest(ctx, (FullHttpRequest) msg);
         } else if (msg instanceof WebSocketFrame) {
-            try {
-                handleWebSocketFrame(ctx, (WebSocketFrame) msg);
-            } catch (InvalidProtocolBufferException e) {
-                e.printStackTrace();
-            }
+            handleWebSocketFrame(ctx, (WebSocketFrame) msg);
         }else if(msg instanceof CmdHandler){
             ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
             cmdFactoryCenter.executeCmd(session, (CmdHandler)msg);
@@ -67,6 +70,7 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
+        log.error("Netty层捕获到异常",cause);
         ctx.close();
     }
     private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest req) {
@@ -133,13 +137,13 @@ public class WsServerCmdDispatcher extends SimpleChannelInboundHandler<Object>{
         String location =  req.headers().get(HttpHeaders.Names.HOST) + WEBSOCKET_PATH;
         return "ws://" + location;
     }
-    private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) throws InvalidProtocolBufferException {
+    private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {
         if (frame instanceof CloseWebSocketFrame) {
             handshaker.close(ctx.channel(), (CloseWebSocketFrame) frame.retain());
             return;
         }
         if (frame instanceof PingWebSocketFrame) {
-            ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
+            ctx.channel().write(new PongWebSocketFrame(frame.content()));
             return;
         }
 

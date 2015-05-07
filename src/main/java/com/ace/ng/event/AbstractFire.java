@@ -1,15 +1,21 @@
 package com.ace.ng.event;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @author Chenlong
  * 事件触发器抽象实现类，泛型提供类型指定扩展
  * */
 public class AbstractFire<T> implements Fire<T>{
-	protected Map<IEvent, List<IEventHandler<T>>> firesMap=new HashMap<IEvent, List<IEventHandler<T>>>();
+	protected Map<IEvent, List<IEventHandler<T>>> firesMap=new ConcurrentHashMap<>();
+	private static final Logger log= LoggerFactory.getLogger(AbstractFire.class);
 	/**
 	 * 注册事件
 	 * @param name 事件名
@@ -22,6 +28,12 @@ public class AbstractFire<T> implements Fire<T>{
 		if(handlers==null){
 			handlers=new LinkedList<IEventHandler<T>>();
 			firesMap.put(name, handlers);
+		}
+		for(IEventHandler<T> h:handlers){
+			if(h.getClass()==handler.getClass()){
+				log.warn("重复添加相同的监听事件处理器:handlerClass={}",handler.getClass().getName());
+				return;
+			}
 		}
 		handlers=firesMap.get(name);
 		handlers.add(handler);

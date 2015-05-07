@@ -45,7 +45,6 @@ public class Session implements ISession{
 	private long lastActiveTime;//最后活动时间
 	private volatile boolean active=true;
 	private IActor actor;
-    private CountDownLatch closeCompleteLatch=new CountDownLatch(1);
     private static Logger logger= LoggerFactory.getLogger(Session.class);
 	public Session(Channel channel){
 		this.channel=channel;
@@ -77,7 +76,6 @@ public class Session implements ISession{
 			
 			if(immediately){
 				future.sync();
-                waitForCloseComplete();
 			}
 		} catch (InterruptedException e) {
             e.printStackTrace();
@@ -136,7 +134,6 @@ public class Session implements ISession{
 			try {
 				if(immediately){
 					future.sync();
-                    waitForCloseComplete(2,TimeUnit.SECONDS);
 				}
 				future=disconnect(immediately);
 			} catch (InterruptedException e) {
@@ -158,21 +155,6 @@ public class Session implements ISession{
 		this.actor=actor;
 	}
 
-
-    @Override
-    public void waitForCloseComplete() throws InterruptedException {
-        closeCompleteLatch.await();
-    }
-
-    @Override
-    public void waitForCloseComplete(long timeout,TimeUnit unit) throws InterruptedException {
-        closeCompleteLatch.await(timeout, unit);
-    }
-    @Override
-    public void noticeCloseComplete() {
-        closeCompleteLatch.countDown();
-    }
-
 	@Override
 	public <T> void setAttribute(AttributeKey<T> key, T value) {
 		channel.attr(key).set(value);
@@ -188,21 +170,28 @@ public class Session implements ISession{
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeByte((byte)output);
+					buf.writeByte((byte) output);
+				}
+			});
+		}else if(clazz==boolean.class||clazz==Boolean.class){
+			return send(cmd, new Output() {
+				@Override
+				public void encode(CustomBuf buf) {
+					buf.writeBoolean((boolean)output);
 				}
 			});
 		}else if(clazz==short.class||clazz==Short.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeShort((short)output);
+					buf.writeShort((short) output);
 				}
 			});
 		}else if(clazz==int.class||clazz==Integer.class){
 			return send(cmd, new Output() {
 				@Override
 				public void encode(CustomBuf buf) {
-					buf.writeInt((int)output);
+					buf.writeInt((int) output);
 				}
 			});
 		}else if(clazz==float.class||clazz==Float.class){

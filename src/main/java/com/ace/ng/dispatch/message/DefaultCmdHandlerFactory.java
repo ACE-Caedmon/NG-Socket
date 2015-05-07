@@ -18,6 +18,7 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 	private static Logger logger=LoggerFactory.getLogger(DefaultCmdHandlerFactory.class);
 	private Map<Short, String> messageHandlers;
 	private Map<Short, CmdHandlerCreator> handlerCreateorMap;
+	private final Object lock=new Object();
 	private static ClassPool classPool=ClassPool.getDefault();
 	public DefaultCmdHandlerFactory(){
 		messageHandlers=new HashMap(100);
@@ -35,12 +36,21 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
             }
             //构造HandlerCreator
 			if(handlerCreator==null){
-				CtClass c=classPool.getAndRename(NoOpMessageHandlerCreator.class.getName(), "com.ace.ng.codec.CmdHandlerCreatorProxy$"+cmd);
-                CtMethod m=c.getDeclaredMethod("create");
-                CtClass handlerClass=classPool.get(handlerClassName);
-                m.insertBefore("com.ace.ng.dispatch.message.CmdHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
-                handlerCreator=(CmdHandlerCreator)c.toClass().newInstance();
-                handlerCreateorMap.put(cmd,handlerCreator);
+				//双重检查
+				synchronized (lock){
+					if((handlerCreator=handlerCreateorMap.get(cmd))==null){
+						String creatorProxyName="com.ace.ng.codec.CmdHandlerCreatorProxy$"+cmd;
+						CtClass c=classPool.getOrNull(creatorProxyName);
+						if(c==null){
+							c=classPool.getAndRename(NoOpMessageHandlerCreator.class.getName(),creatorProxyName );
+						}
+						CtMethod m=c.getDeclaredMethod("create");
+						m.insertBefore("com.ace.ng.dispatch.message.CmdHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
+						handlerCreator=(CmdHandlerCreator)c.toClass().newInstance();
+						handlerCreateorMap.put(cmd,handlerCreator);
+					}
+				}
+
             }
 
 			CmdHandler<?> result=handlerCreator.create(cmd);
@@ -56,9 +66,9 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 	@Override
 	public void registerHandler(Short cmd, Class<?> clazz) {
 		if(CmdHandler.class.isAssignableFrom(clazz)){
-			if(messageHandlers.containsKey(cmd)){
-				throw new IllegalArgumentException("消息指令已存在( cmd = "+cmd+",alreadyClass = "+messageHandlers.get(cmd)+",newClass = "+clazz.getName());
-			}
+//			if(messageHandlers.containsKey(cmd)){
+//				logger.error("消息指令已存在( cmd = "+cmd+",alreadyClass = "+messageHandlers.get(cmd)+",newClass = "+clazz.getName());
+//			}
 			messageHandlers.put(cmd, clazz.getName());
 		}else{
 			throw new IllegalArgumentException("消息处理器类必须实现CmdHandler接口 ( cmd = "+cmd+",class = "+clazz.getName()+")");

@@ -11,6 +11,5 @@ com.ace.ng.event
 com.ace.ng.examples
 com.ace.ng.handler
 com.ace.ng.impl
-com.ace.ng.parse
 com.ace.ng.session
 com.ace.ng.utils

@@ -5,6 +5,7 @@ import com.ace.ng.codec.BinaryCodecApi;
 import com.ace.ng.codec.binary.BinaryPacket;
 import com.ace.ng.dispatch.CmdHandlerFactory;
 import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
+import com.ace.ng.dispatch.message.Cmd;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
@@ -77,12 +78,15 @@ import java.util.Map;
         ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         if(checkIncr(bufForDecode, session)){
             CmdHandler cmdHandler=BinaryCodecApi.decodeCmdHandler(cmdFactoryCenter,bufForDecode);
-            out.add(cmdHandler);
+            if(cmdHandler!=null){
+                out.add(cmdHandler);
+            }
         }else{
             bufForDecode.skipBytes(bufForDecode.readableBytes());
         }
         bufForDecode.release();
         incred=false;
+
     }
     private boolean checkIncr(ByteBuf bufForDecode, ISession session){
         int ci=bufForDecode.readInt();//获取消息中的自增ID

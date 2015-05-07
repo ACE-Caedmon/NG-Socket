@@ -18,10 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>{
-	private static final Logger log = LoggerFactory.getLogger(TCPCmdDispatcher.class);
+public class TCPServerInboundHandler extends SimpleChannelInboundHandler<CmdHandler<?>>{
+	private static final Logger log = LoggerFactory.getLogger(TCPServerInboundHandler.class);
 	private CmdFactoryCenter cmdFactoryCenter;
-	public TCPCmdDispatcher(CmdFactoryCenter cmdFactoryCenter){
+	public TCPServerInboundHandler(CmdFactoryCenter cmdFactoryCenter){
 		this.cmdFactoryCenter=cmdFactoryCenter;
 	}
     /**
@@ -38,7 +38,6 @@ public class TCPCmdDispatcher extends SimpleChannelInboundHandler<CmdHandler<?>>
             public void run() {
                 SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
                 session.clear();
-                session.noticeCloseComplete();
 				actor.releaseExecutor();
             }
         });
