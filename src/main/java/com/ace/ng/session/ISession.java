@@ -33,14 +33,14 @@ public interface ISession {
 	/**
 	 * 发送消息
 	 * */
-	Future<?> send(short cmd,Object output);
+	Future<?> send(short cmd,Object... output);
 	/**
 	 * 断开客户端连接
 	 * @param immediately 是否立即断开
 	 * */
 	Future<?> disconnect(boolean immediately);
 
-	Future<?> disconnect(boolean immediately, short cmd,Object output);
+	Future<?> disconnect(boolean immediately, short cmd,Object... objects);
 	/**
 	 * @return session最后活动时间
 	 * */

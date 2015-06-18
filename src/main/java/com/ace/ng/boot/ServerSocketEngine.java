@@ -1,14 +1,11 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.CmdHandlerFactory;
-import com.ace.ng.dispatch.message.CmdHandler;
-import com.ace.ng.dispatch.message.CmdTaskFactory;
-import com.ace.ng.dispatch.message.DefaultCmdHandlerFactory;
 import com.ace.ng.dispatch.tcp.TCPServerInitializer;
 import com.ace.ng.dispatch.websocket.WsServerInitalizer;
 import com.ace.ng.handler.ValidateOKHandler;
 import com.ace.ng.impl.DefaultCmdFactoryCenter;
 import com.ace.ng.session.SessionFire;
+import com.ace.ng.utils.NGSocketParams;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -43,10 +40,10 @@ public class ServerSocketEngine extends SocketEngine{
             ChannelInitializer<SocketChannel> initializer=null;
             switch (settings.protocol.toLowerCase()){
                 case TCP_PROTOCOL:
-                    initializer=new TCPServerInitializer(cmdFactoryCenter,settings);
+                    initializer=new TCPServerInitializer(cmdFactoryCenter);
                     break;
                 case WEBSOCKET_PROTOCOL:
-                    initializer=new WsServerInitalizer(cmdFactoryCenter,settings);
+                    initializer=new WsServerInitalizer(cmdFactoryCenter);
                     break;
             }
 
@@ -59,19 +56,22 @@ public class ServerSocketEngine extends SocketEngine{
             log.info("Boss thread : {}",settings.bossThreadSize);
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.cmdThreadSize);
-            log.info("Socket package encrypt : {}", settings.encrypt);
+            log.info("Socket package encrypt : {}", NGSocketParams.SOCKET_PACKET_ENCRYPT);
             log.info("CmdFactoryCenter : {}", cmdFactoryCenter.getClass().getCanonicalName());
             log.info("Socket port :{}",settings.port);
 
             //f.channel().closeFuture().sync();
         } catch (Exception e) {
-            log.error("<<<<<<<网络服务启动异常>>>>>>", e);
+            e.printStackTrace();
+            if(log.isErrorEnabled()){
+                log.error("<<<<<<<网络服务启动异常>>>>>>", e);
+            }
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
             return;
         }
         //如果系统配置不加密则不发送密码表
-        if(settings.encrypt){
+        if(NGSocketParams.SOCKET_PACKET_ENCRYPT){
             //用来给客户端发送密码表
             SessionFire.getInstance().registerEvent(SessionFire.SessionEvent.SESSION_LOGIN, new ValidateOKHandler());
         }

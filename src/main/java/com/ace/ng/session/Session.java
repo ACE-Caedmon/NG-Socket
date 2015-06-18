@@ -9,7 +9,6 @@ package com.ace.ng.session;
 import com.ace.ng.codec.CustomBuf;
 import com.ace.ng.codec.Output;
 import com.ace.ng.codec.OutputPacket;
-import com.ace.ng.codec.ProtoBufOutput;
 import com.google.protobuf.AbstractMessage;
 import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
@@ -20,14 +19,8 @@ import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Session implements ISession{
 	/**Session对象Key**/
@@ -45,6 +38,8 @@ public class Session implements ISession{
 	private long lastActiveTime;//最后活动时间
 	private volatile boolean active=true;
 	private IActor actor;
+	//Netty已经触发过inActive
+	private AtomicBoolean nettyInActive=new AtomicBoolean(false);
     private static Logger logger= LoggerFactory.getLogger(Session.class);
 	public Session(Channel channel){
 		this.channel=channel;
@@ -71,15 +66,36 @@ public class Session implements ISession{
 	}
 	@Override
 	public Future<?> disconnect(boolean immediately) {
-		ChannelFuture future=channel.disconnect();
-		try {
-			
-			if(immediately){
-				future.sync();
+		ChannelFuture future=null;
+		try{
+			if(!nettyInActive.get()){
+				nettyInActive.compareAndSet(false,true);
+				future=channel.disconnect();
+				if(immediately){
+					future.sync();
+				}
+				if(actor==null){
+					SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT,Session.this);
+				}else{
+					java.util.concurrent.Future actorFuture= actor.execute(new Runnable() {
+						@Override
+						public void run() {
+							SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, Session.this);
+						}
+					});
+					if(immediately){
+						actorFuture.get();
+					}
+				}
+				if(actor!=null){
+					actor.releaseExecutor();
+				}
 			}
-		} catch (InterruptedException e) {
-            e.printStackTrace();
+		}catch (Exception e){
+			e.printStackTrace();
+			logger.error("断线异常",e);
 		}
+
 		return future;
 	}
 	@Override
@@ -127,10 +143,10 @@ public class Session implements ISession{
 		this.active=active;
 	}
 	@Override
-	public Future<?> disconnect(boolean immediately, short cmd,Object output) {
+	public Future<?> disconnect(boolean immediately, short cmd,Object... objects) {
 		Future<?> future=channel.newSucceededFuture();
 		if(channel.isActive()){
-			future=this.send(cmd, output);
+			future=this.send(cmd, objects);
 			try {
 				if(immediately){
 					future.sync();
@@ -160,70 +176,38 @@ public class Session implements ISession{
 		channel.attr(key).set(value);
 	}
 	@Override
-	public Future<?> send(short cmd, final Object output) {
-		Class clazz=output.getClass();
-		if(output instanceof Output){
-			return send(cmd,(Output)output);
-		}else if(output instanceof AbstractMessage.Builder){
-			return send(cmd,new ProtoBufOutput((AbstractMessage.Builder)output));
-		}else if(clazz==byte.class||clazz==Byte.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeByte((byte) output);
+	public Future<?> send(final short cmd, final Object... objects) {
+		Output message=new Output() {
+			@Override
+			public void encode(CustomBuf buf) {
+				for(final Object output:objects){
+					Class clazz=output.getClass();
+					if(output instanceof Output){
+						((Output) output).encode(buf);
+					}else if(output instanceof AbstractMessage.Builder){
+						buf.writeProtoBuf((AbstractMessage.Builder)output);
+					}else if(clazz==byte.class||clazz==Byte.class){
+						buf.writeByte((byte)output);
+					}else if(clazz==boolean.class||clazz==Boolean.class){
+						buf.writeBoolean((boolean)output);
+					}else if(clazz==short.class||clazz==Short.class){
+						buf.writeShort((short) output);
+					}else if(clazz==int.class||clazz==Integer.class){
+						buf.writeInt((int) output);
+					}else if(clazz==float.class||clazz==Float.class){
+						buf.writeFloat((float)output);
+					}else if(clazz==double.class||clazz==Double.class){
+						buf.writeDouble((double)output);
+					}else if(clazz==long.class||clazz==Long.class){
+						buf.writeLong((long)output);
+					}else if(clazz==String.class){
+						buf.writeString(String.valueOf(output));
+					}else{
+						throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
+					}
 				}
-			});
-		}else if(clazz==boolean.class||clazz==Boolean.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeBoolean((boolean)output);
-				}
-			});
-		}else if(clazz==short.class||clazz==Short.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeShort((short) output);
-				}
-			});
-		}else if(clazz==int.class||clazz==Integer.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeInt((int) output);
-				}
-			});
-		}else if(clazz==float.class||clazz==Float.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeFloat((float)output);
-				}
-			});
-		}else if(clazz==double.class||clazz==Double.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeDouble((double)output);
-				}
-			});
-		}else if(clazz==long.class||clazz==Long.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeLong((long)output);
-				}
-			});
-		}else if(clazz==String.class){
-			return send(cmd, new Output() {
-				@Override
-				public void encode(CustomBuf buf) {
-					buf.writeString(String.valueOf(output));
-				}
-			});
-		}else{
-			throw new UnsupportedMessageTypeException("暂不支持该类型自动解码"+output.getClass().getName());
-		}
+			}
+		};
+		return  send(cmd,message);
 	}
 }

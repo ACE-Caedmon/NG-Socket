@@ -35,22 +35,16 @@ public class WsClientInboundHandler extends SimpleChannelInboundHandler{
     }
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        final ISession session=new Session(ctx.channel());
-        ctx.channel().attr(Session.SESSION_KEY).set(session);
         ctx.channel().attr(Session.INCREMENT).set(0);
+        ISession session=new Session(ctx.channel());
+        ctx.channel().attr(Session.SESSION_KEY).set(session);
         handshake(ctx.channel());
 
     }
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-        session.getActor().execute(new Runnable() {
-            public void run() {
-                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
-                session.clear();
-                session.getActor().releaseExecutor();
-            }
-        });
+        session.disconnect(true);
     }
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {

@@ -5,13 +5,13 @@ import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.message.CmdTaskInterceptor;
 import com.ace.ng.dispatch.message.DefaultCmdHandlerFactory;
 import com.ace.ng.session.ISession;
-import com.jcwx.frm.current.CurrentUtils;
 import com.jcwx.frm.current.IActor;
 import com.jcwx.frm.current.IActorManager;
 import com.jcwx.frm.current.QueueActorManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -43,18 +43,18 @@ public abstract class CmdFactoryCenter<U> {
     private List<CmdTaskInterceptor> interceptors=new ArrayList<>();
     private IActorManager actorManager;
     public void registerCmdHandler(Short cmd,Class<? extends CmdHandler> handler){
-        handlerFactory.registerHandler(cmd,handler);
+        handlerFactory.registerHandler(cmd, handler);
     }
     public void addCmdInterceptor(CmdTaskInterceptor interceptor){
         interceptors.add(interceptor);
     }
-    public final void executeCmd(final ISession session,final CmdHandler<U> handler){
+    public final Future executeCmd(final ISession session,final CmdHandler<U> handler){
         IActor actor=session.getActor();
         if(actor==null){
             actor=actorManager.createActor();
             session.setActor(actor);
         }
-        actor.execute(new Runnable() {
+        return actor.execute(new Runnable() {
             @Override
             public void run() {
                 boolean vaildExecute=true;
@@ -75,7 +75,7 @@ public abstract class CmdFactoryCenter<U> {
 
                 }catch (Throwable cause){
                     if(interceptors.isEmpty()){
-                        throw  cause;
+                        cause.printStackTrace();
                     }else{
                         for(CmdTaskInterceptor interceptor:interceptors){
                             interceptor.exceptionCaught(session, handler,cause);

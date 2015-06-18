@@ -5,6 +5,7 @@ import com.ace.ng.boot.TCPClientSettings;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
 import com.ace.ng.session.Session;
+import com.ace.ng.utils.NGSocketParams;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -22,10 +23,9 @@ public class TCPClientInitializer extends ChannelInitializer<SocketChannel>{
     }
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
-        if(settings.logging){
+        if(NGSocketParams.NETTY_LOGGING){
             ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
         }
-
         ch.pipeline().addLast(new TCPBinaryDecoder());
         ch.pipeline().addLast(new ServerBinaryEncryptDecoder(cmdFactoryCenter));
         ch.pipeline().addLast(new ServerBinaryEncryptEncoder());

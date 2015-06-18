@@ -16,10 +16,4 @@ public class ServerSettings {
     public int workerThreadSize=10;
     /**Message处理线程池大小**/
     public int cmdThreadSize =10;
-    /**网络数据是否加密**/
-    public boolean encrypt=false;
-
-    public String secretKey="ng-socket";
-    /**是否加入LoggingHandler*/
-    public boolean logging=false;
 }

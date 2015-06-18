@@ -10,9 +10,6 @@ public class TCPClientSettings {
     public int port=8001;
     /**Message处理线程池大小**/
     public int cmdThreadSize =10;
-    /**网络数据是否加密**/
-    public boolean encrypt=false;
     public int workerThreadSize=Runtime.getRuntime().availableProcessors();
     public String secretKey="ng-socket";
-    public boolean logging=false;
 }

@@ -3,6 +3,7 @@ package com.ace.ng.dispatch.websocket;
 import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.boot.WsClientSettings;
 import com.ace.ng.session.Session;
+import com.ace.ng.utils.NGSocketParams;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -28,7 +29,7 @@ public class WsClientInitalizer extends ChannelInitializer<SocketChannel>{
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ch.config().setAllocator(PooledByteBufAllocator.DEFAULT);
-        if(settings.logging){
+        if(NGSocketParams.NETTY_LOGGING){
             ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
         }
         ch.pipeline().addLast(new HttpClientCodec());

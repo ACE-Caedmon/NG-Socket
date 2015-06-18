@@ -5,6 +5,7 @@ import com.ace.ng.handler.ValidateOKHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
+import com.ace.ng.utils.NGSocketParams;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -23,7 +24,6 @@ import java.net.URI;
 public class WsClientSocketEngine extends SocketEngine{
     private static final Logger log= LoggerFactory.getLogger(TCPClientSocketEngine.class);
     private WsClientSettings settings;
-    private ISession session;
     private Channel channel;
     private EventLoopGroup eventExecutors;
     public WsClientSocketEngine(WsClientSettings settings, CmdFactoryCenter cmdFactoryCenter) {
@@ -55,16 +55,19 @@ public class WsClientSocketEngine extends SocketEngine{
             log.info("Protocol type: {}",WEBSOCKET_PROTOCOL);
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.cmdThreadSize);
-            log.info("Socket package encrypt : {}", settings.encrypt);
+            log.info("Socket package encrypt : {}", NGSocketParams.SOCKET_PACKET_ENCRYPT);
             log.info("CmdFatoryCenter : {}", cmdFactoryCenter.getClass().getCanonicalName());
             log.info("Socket port :{}",uri.getPort());
         } catch (Exception e) {
-            log.error("<<<<<<<网络服务启动异常>>>>>>", e);
+            e.printStackTrace();
+            if(log.isErrorEnabled()){
+                log.error("<<<<<<<网络服务启动异常>>>>>>", e);
+            }
             workerGroup.shutdownGracefully();
             return;
         }
         //如果系统配置不加密则不发送密码表
-        if(settings.encrypt){
+        if(NGSocketParams.SOCKET_PACKET_ENCRYPT){
             //用来给客户端发送密码表
             SessionFire.getInstance().registerEvent(SessionFire.SessionEvent.SESSION_LOGIN, new ValidateOKHandler());
         }
@@ -72,5 +75,8 @@ public class WsClientSocketEngine extends SocketEngine{
     }
     public ISession getSession(){
         return channel.attr(Session.SESSION_KEY).get();
+    }
+    public Channel getChannel(){
+        return channel;
     }
 }

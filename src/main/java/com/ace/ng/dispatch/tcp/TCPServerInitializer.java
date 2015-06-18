@@ -10,6 +10,7 @@ import com.ace.ng.boot.ServerSettings;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
 import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
 import com.ace.ng.session.Session;
+import com.ace.ng.utils.NGSocketParams;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -19,14 +20,12 @@ import io.netty.handler.logging.LoggingHandler;
 @Sharable
 public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
     private CmdFactoryCenter cmdFactoryCenter;
-	private ServerSettings settings;
-	public TCPServerInitializer(CmdFactoryCenter cmdFactoryCenter,ServerSettings settings){
+	public TCPServerInitializer(CmdFactoryCenter cmdFactoryCenter){
 		this.cmdFactoryCenter=cmdFactoryCenter;
-		this.settings=settings;
 	}
 	@Override
 	protected void initChannel(SocketChannel ch) throws Exception {
-		if(settings.logging){
+		if(NGSocketParams.NETTY_LOGGING){
 			ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
 		}
 		ch.pipeline().addLast(new TCPBinaryDecoder());
@@ -34,7 +33,7 @@ public class TCPServerInitializer extends ChannelInitializer<SocketChannel>{
 		ch.pipeline().addLast(new ServerBinaryEncryptEncoder());
 		ch.pipeline().addLast(new TCPBinaryEncoder());
 		ch.pipeline().addLast(new TCPServerInboundHandler(cmdFactoryCenter));
-		ch.attr(Session.SECRRET_KEY).set(settings.secretKey);
+		ch.attr(Session.SECRRET_KEY).set(NGSocketParams.SOCKET_SECRET_KEY);
 		
 		
 	}

@@ -9,6 +9,7 @@ import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.utils.CommonUtils;
+import com.ace.ng.utils.NGSocketParams;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Administrator on 2015/4/25.
@@ -108,7 +108,10 @@ public class BinaryCodecApi {
             }
         }else{
             bufForDecode.skipBytes(bufForDecode.readableBytes());
-            log.warn("未知指令(cmd = " + cmd + ")");
+            if(NGSocketParams.WARN_UNKOWN_CMD){
+                log.warn("未知指令(cmd = " + cmd + ")");
+            }
+
         }
         return handler;
     }
@@ -189,6 +192,7 @@ public class BinaryCodecApi {
                             String protoClassName=null;
                             if(protoElementCache.containsKey(typeAllName)){
                                 builderClassName= protoElementCache.get(typeAllName).builderClassName;
+                                protoClassName=protoElementCache.get(typeAllName).protoClassName;
                                 firstProto=false;
                             }else{
                                 builderClassName=typeAllName.replaceAll("\\$",".");

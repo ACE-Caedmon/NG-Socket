@@ -19,7 +19,7 @@ public abstract class Extension {
 	 * 注册消息处理器
 	 * @param classes 对应指令ID的MessageHandler的Class
 	 * */
-	public Extension regiterCmd(Class<? extends CmdHandler<?>>...classes){
+	public Extension registerCmd(Class<? extends CmdHandler<?>>... classes){
 		for(Class<? extends CmdHandler<?>> c:classes){
 			cmdHandlers.add(c);
 		}

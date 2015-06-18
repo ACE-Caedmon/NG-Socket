@@ -48,13 +48,7 @@ public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-        cmdFactoryCenter.executeCmd(session, new CmdHandler() {
-            @Override
-            public void execute(Object user) {
-                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_DISCONNECT, session);
-                session.clear();
-            }
-        });
+        session.disconnect(true);
     }
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {
