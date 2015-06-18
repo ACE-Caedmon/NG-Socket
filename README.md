@@ -41,38 +41,38 @@ NG-Socket的解码层采用Javassit动态更改字节码，并且使用缓存等
 CmdHandler解码有两种方式。
 
 1.重写decode方法,然后手动对每个属性赋值,在CustomBuf中封装了各种常见的解码接口，方便开发者使用。
-    @Cmd(id=1,desc="测试用")
-    public class Handler0001 extends SessionCmdHandler {
-        private String content;
-        @Override
-        public void decode(CustomBuf buf){
-            this.content=buf.readString();
-        }
 
-        @Override
-        public void execute(ISession playerOnline) {
-            System.out.println("Server recived:"+content);
-            Message001 message001=new Message001((short)1);
-            message001.setContent("content");
-            playerOnline.send(message001);
+        @Cmd(id=1,desc="测试用")
+        public class Handler0001 extends SessionCmdHandler {
+                private String content;
+                @Override
+                public void decode(CustomBuf buf){
+                this.content=buf.readString();
+                }
+                @Override
+                public void execute(ISession playerOnline) {
+                        System.out.println("Server recived:"+content);
+                        Message001 message001=new Message001();
+                        message001.setContent("content");
+                        playerOnline.send((short)1,message001);
+                }
         }
-    }
 2.使用系统提供的自动解码
+
     @Cmd(id=1,desc="测试用")
     public class Handler0001 extends SessionCmdHandler {
         private String content;
         @NotDecode
         private int id;
-        public void setMessage(String content) {
+        public void setContent(String content) {
             this.content = content;
         }
-
         @Override
         public void execute(ISession playerOnline) {
             System.out.println("Server recived:"+content);
-            Message001 message001=new Message001((short)1);
+            Message001 message001=new Message001();
             message001.setContent("content");
-            playerOnline.send(message001);
+            playerOnline.send((short)1,message001);
         }
     }
 在上述代码中，不用重写decode,只需要对需要解码赋值的属性提供set方法,框架就会自动帮你解码。不需要解码的属性,加一个@NotDecode的标记就可以了。
