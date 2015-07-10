@@ -14,7 +14,7 @@ import java.util.List;
 public class TCPBinaryDecoder extends ReplayingDecoder<Void> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        short length=in.readShort();
+        int length=in.readInt();
         BinaryPacket packet=new BinaryPacket(in.readBytes(length));
         out.add(packet);
     }

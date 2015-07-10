@@ -13,7 +13,6 @@ import com.ace.ng.session.SessionFire;
 public class TestExtension extends Extension {
     @Override
     public void init() {
-        registerCmd(Handler0001.class);
         SessionFire.getInstance().registerEvent(SessionFire.SessionEvent.SESSION_CONNECT, new IEventHandler<ISession>() {
             @Override
             public void handleEvent(ISession entity) {

@@ -14,7 +14,7 @@ public class TCPBinaryEncoder extends MessageToByteEncoder<BinaryPacket> {
     @Override
     protected void encode(ChannelHandlerContext ctx, BinaryPacket packet, ByteBuf out) throws Exception {
         ByteBuf buf=Unpooled.buffer();
-        buf.writeShort(packet.getContent().readableBytes());
+        buf.writeInt(packet.getContent().readableBytes());
         buf.writeBytes(packet.getContent());
         out.writeBytes(buf);
     }

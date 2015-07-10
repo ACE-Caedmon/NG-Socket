@@ -1,6 +1,11 @@
 package com.ace.ng.utils;
 
+import com.ace.ng.codec.NotDecode;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 
 /**
  * Created by Administrator on 2014/6/7.
@@ -34,4 +39,5 @@ public class CommonUtils {
     public static String firstToUpperCase(String s){
         return s.replaceFirst( s.substring(0, 1), s.substring(0, 1).toUpperCase());
     }
+
 }

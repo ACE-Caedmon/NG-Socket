@@ -1,7 +1,6 @@
 package com.ace.ng.dispatch.javassit;
 
 import com.ace.ng.codec.CustomBuf;
-import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
 import com.ace.ng.dispatch.message.CmdHandler;
 
 /**

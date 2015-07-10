@@ -7,7 +7,6 @@ import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;

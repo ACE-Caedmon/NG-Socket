@@ -37,12 +37,12 @@ public abstract class CmdFactoryCenter<U> {
         return actorManager;
     }
 
-    public CmdHandler getCmdHandler(Short cmd){
+    public CmdHandler getCmdHandler(Integer cmd){
         return (CmdHandler)this.handlerFactory.getHandler(cmd);
     }
     private List<CmdTaskInterceptor> interceptors=new ArrayList<>();
     private IActorManager actorManager;
-    public void registerCmdHandler(Short cmd,Class<? extends CmdHandler> handler){
+    public void registerCmdHandler(Integer cmd,Class<? extends CmdHandler> handler){
         handlerFactory.registerHandler(cmd, handler);
     }
     public void addCmdInterceptor(CmdTaskInterceptor interceptor){

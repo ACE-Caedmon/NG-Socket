@@ -1,11 +1,13 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.message.Cmd;
+import com.ace.ng.annotation.CmdControl;
 import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.utils.ClassUtils;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,13 +55,19 @@ public abstract class SocketEngine {
         for(Extension extension:extensions){
             log.info("Load extension:{}", StringUtil.simpleClassName(extension));
             extension.init();
-            List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
-            for(Class c:classes){
-                Cmd annotation= (Cmd) c.getAnnotation(Cmd.class);
+            List<Class> cmdControls=new ArrayList<>();
+            //生成
+            try{
+                cmdControls=ClassUtils.getClasssFromPackage("com.ace.ng");
+            }catch (Exception e){
+
+            }
+            for(Class c:cmdControls){
+                CmdControl annotation= (CmdControl) c.getAnnotation(CmdControl.class);
                 if(annotation==null){
-                    throw new NullPointerException("Class has no Cmd:"+c.getName());
+                    throw new NullPointerException("Class has no CmdControl:"+c.getName());
                 }
-                cmdFactoryCenter.registerCmdHandler(annotation.id(),c);
+                cmdFactoryCenter.registerCmdHandler(annotation.control(),c);
             }
         }
     }

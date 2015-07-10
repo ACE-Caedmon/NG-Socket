@@ -33,7 +33,7 @@ public interface ISession {
 	/**
 	 * 发送消息
 	 * */
-	Future<?> send(short cmd,Object... output);
+	Future<?> send(int cmd,Object... output);
 	/**
 	 * 断开客户端连接
 	 * @param immediately 是否立即断开

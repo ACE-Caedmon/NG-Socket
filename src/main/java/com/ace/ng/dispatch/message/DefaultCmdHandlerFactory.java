@@ -6,7 +6,7 @@ package com.ace.ng.dispatch.message;
 
 import com.ace.ng.dispatch.javassit.CmdHandlerCreator;
 import com.ace.ng.dispatch.CmdHandlerFactory;
-import com.ace.ng.dispatch.javassit.NoOpMessageHandlerCreator;
+import com.ace.ng.dispatch.javassit.NoOpCmdHandlerCreator;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +14,10 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHandler> {
+public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Integer,CmdHandler> {
 	private static Logger logger=LoggerFactory.getLogger(DefaultCmdHandlerFactory.class);
-	private Map<Short, String> messageHandlers;
-	private Map<Short, CmdHandlerCreator> handlerCreateorMap;
+	private Map<Integer, String> messageHandlers;
+	private Map<Integer, CmdHandlerCreator> handlerCreateorMap;
 	private final Object lock=new Object();
 	private static ClassPool classPool=ClassPool.getDefault();
 	public DefaultCmdHandlerFactory(){
@@ -27,7 +27,7 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 	}
 
 	@Override
-	public CmdHandler<?> getHandler(Short cmd) {
+	public CmdHandler<?> getHandler(Integer cmd) {
 		CmdHandlerCreator handlerCreator=handlerCreateorMap.get(cmd);
 		try {
             String handlerClassName=messageHandlers.get(cmd);
@@ -42,7 +42,7 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 						String creatorProxyName="com.ace.ng.codec.CmdHandlerCreatorProxy$"+cmd;
 						CtClass c=classPool.getOrNull(creatorProxyName);
 						if(c==null){
-							c=classPool.getAndRename(NoOpMessageHandlerCreator.class.getName(),creatorProxyName );
+							c=classPool.getAndRename(NoOpCmdHandlerCreator.class.getName(),creatorProxyName );
 						}
 						CtMethod m=c.getDeclaredMethod("create");
 						m.insertBefore("com.ace.ng.dispatch.message.CmdHandler handler = new " + handlerClassName + "();" + " if(handler!=null){ return handler;}");
@@ -64,7 +64,7 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 	}
 
 	@Override
-	public void registerHandler(Short cmd, Class<?> clazz) {
+	public void registerHandler(Integer cmd, Class<?> clazz) {
 		if(CmdHandler.class.isAssignableFrom(clazz)){
 //			if(messageHandlers.containsKey(cmd)){
 //				logger.error("消息指令已存在( cmd = "+cmd+",alreadyClass = "+messageHandlers.get(cmd)+",newClass = "+clazz.getName());
@@ -77,7 +77,7 @@ public class DefaultCmdHandlerFactory implements CmdHandlerFactory<Short,CmdHand
 	}
 
 	@Override
-	public void remove(Short cmd) {
+	public void remove(Integer cmd) {
 		messageHandlers.remove(cmd);
 		
 	}

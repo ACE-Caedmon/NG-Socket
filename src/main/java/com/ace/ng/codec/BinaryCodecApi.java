@@ -27,7 +27,7 @@ import java.util.*;
  */
 public class BinaryCodecApi {
     private static Logger log= LoggerFactory.getLogger(BinaryCodecApi.class);
-    private static Map<Short,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<>(100);
+    private static Map<Integer,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<>(100);
     private static ClassPool classPool=ClassPool.getDefault();
     private static Map<String,ProtoCacheElement> protoElementCache =new HashMap<>();
     private static final Object lock=new Object();
@@ -47,7 +47,7 @@ public class BinaryCodecApi {
             isEncrypt=session.getAttribute(Session.NEED_ENCRYPT);
         }
         ByteBuf buf=PooledByteBufAllocator.DEFAULT.buffer();
-        buf.writeShort(output.getCmd());
+        buf.writeInt(output.getCmd());
         CustomBuf content=new ByteCustomBuf(buf);
         output.getOutput().encode(content);
         byte[] dst=new byte[buf.readableBytes()];
@@ -91,7 +91,7 @@ public class BinaryCodecApi {
         return bufForDecode;
     }
     public static CmdHandler decodeCmdHandler(CmdFactoryCenter cmdFactoryCenter,ByteBuf bufForDecode){
-        short cmd=bufForDecode.readShort();
+        int cmd=bufForDecode.readInt();
         CmdHandler<?> handler=cmdFactoryCenter.getCmdHandler(cmd);
         if(handler!=null){
             try {
@@ -109,13 +109,13 @@ public class BinaryCodecApi {
         }else{
             bufForDecode.skipBytes(bufForDecode.readableBytes());
             if(NGSocketParams.WARN_UNKOWN_CMD){
-                log.warn("未知指令(cmd = " + cmd + ")");
+                log.warn("未知指令:cmd={}",cmd);
             }
 
         }
         return handler;
     }
-    private static HandlerPropertySetter getHandlerPropertySetter(Short cmd,CmdHandler<?> handler) throws  Exception{
+    private static HandlerPropertySetter getHandlerPropertySetter(Integer cmd,CmdHandler<?> handler) throws  Exception{
         //构造HandlerPropertySetter
         HandlerPropertySetter handlerPropertySetter=handlerPropertySetterMap.get(cmd);
         if(handlerPropertySetter==null){

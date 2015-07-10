@@ -1,4 +1,4 @@
-package com.ace.ng.dispatch.message;
+package com.ace.ng.annotation;
 
 import java.lang.annotation.*;
 
@@ -8,7 +8,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-public @interface Cmd {
-    short id();
-    String desc();
+public @interface CmdControl {
+    int control();
 }

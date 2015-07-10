@@ -1,6 +1,6 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.dispatch.message.Cmd;
+import com.ace.ng.annotation.CmdControl;
 import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.tcp.TCPClientInitializer;
 import com.ace.ng.handler.ValidateOKHandler;
@@ -74,11 +74,11 @@ public class TCPClientSocketEngine extends SocketEngine{
             extension.init();
             List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
             for(Class c:classes){
-                Cmd annotation= (Cmd) c.getAnnotation(Cmd.class);
+                CmdControl annotation= (CmdControl) c.getAnnotation(CmdControl.class);
                 if(annotation==null){
-                    throw new NullPointerException("Class has no Cmd:"+c.getName());
+                    throw new NullPointerException("Class has no CmdControl:"+c.getName());
                 }
-                cmdFactoryCenter.registerCmdHandler(annotation.id(), c);
+                cmdFactoryCenter.registerCmdHandler(annotation.control(), c);
             }
         }
         //如果系统配置不加密则不发送密码表

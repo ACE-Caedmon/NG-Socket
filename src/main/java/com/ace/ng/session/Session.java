@@ -108,7 +108,7 @@ public class Session implements ISession{
 		// TODO Auto-generated method stub
 		this.lastActiveTime=lastActiveTime;
 	}
-	private Future<?> send(short cmd, Output output) {
+	private Future<?> send(int cmd, Output output) {
 		if(channel.isActive()){
 			OutputPacket packet=new OutputPacket(cmd,output);
 			ChannelFuture future=channel.writeAndFlush(packet);
@@ -176,7 +176,7 @@ public class Session implements ISession{
 		channel.attr(key).set(value);
 	}
 	@Override
-	public Future<?> send(final short cmd, final Object... objects) {
+	public Future<?> send(final int cmd, final Object... objects) {
 		Output message=new Output() {
 			@Override
 			public void encode(CustomBuf buf) {

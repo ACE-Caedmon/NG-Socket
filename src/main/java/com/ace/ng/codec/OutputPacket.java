@@ -5,13 +5,13 @@ package com.ace.ng.codec;
  * 输出对象
  * */
 public class OutputPacket{
-    private short cmd;
+    private int cmd;
     private Output output;
-    public OutputPacket(short cmd,Output output){
+    public OutputPacket(int cmd,Output output){
         this.cmd=cmd;
         this.output=output;
     }
-    public short getCmd(){
+    public int getCmd(){
         return this.cmd;
     }
 
