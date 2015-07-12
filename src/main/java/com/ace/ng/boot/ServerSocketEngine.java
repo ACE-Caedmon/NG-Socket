@@ -3,7 +3,10 @@ package com.ace.ng.boot;
 import com.ace.ng.dispatch.tcp.TCPServerInitializer;
 import com.ace.ng.dispatch.websocket.WsServerInitalizer;
 import com.ace.ng.handler.ValidateOKHandler;
-import com.ace.ng.impl.DefaultCmdFactoryCenter;
+import com.ace.ng.proxy.BeanAccess;
+import com.ace.ng.proxy.ControlProxyFactory;
+import com.ace.ng.proxy.JavassitControlProxyFactory;
+import com.ace.ng.proxy.PrototypeBeanAccess;
 import com.ace.ng.session.SessionFire;
 import com.ace.ng.utils.NGSocketParams;
 import io.netty.bootstrap.ServerBootstrap;
@@ -22,12 +25,12 @@ import org.slf4j.LoggerFactory;
 public class ServerSocketEngine extends SocketEngine{
     private static final Logger log= LoggerFactory.getLogger(ServerSocketEngine.class);
     private ServerSettings settings;
-    public ServerSocketEngine(ServerSettings settings,CmdFactoryCenter cmdFactoryCenter) {
-        super(cmdFactoryCenter);
+    public ServerSocketEngine(ServerSettings settings,ControlProxyFactory controlProxyFactory) {
+        super(settings,controlProxyFactory);
         this.settings=settings;
     }
     public ServerSocketEngine(ServerSettings settings){
-        this(settings,new DefaultCmdFactoryCenter(settings.cmdThreadSize));
+        this(settings,new JavassitControlProxyFactory(new PrototypeBeanAccess()));
     }
     /**
      * 启动网络服务
@@ -40,10 +43,10 @@ public class ServerSocketEngine extends SocketEngine{
             ChannelInitializer<SocketChannel> initializer=null;
             switch (settings.protocol.toLowerCase()){
                 case TCP_PROTOCOL:
-                    initializer=new TCPServerInitializer(cmdFactoryCenter);
+                    initializer=new TCPServerInitializer(controlProxyFactory);
                     break;
                 case WEBSOCKET_PROTOCOL:
-                    initializer=new WsServerInitalizer(cmdFactoryCenter);
+                    initializer=new WsServerInitalizer(controlProxyFactory);
                     break;
             }
 
@@ -57,7 +60,7 @@ public class ServerSocketEngine extends SocketEngine{
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.cmdThreadSize);
             log.info("Socket package encrypt : {}", NGSocketParams.SOCKET_PACKET_ENCRYPT);
-            log.info("CmdFactoryCenter : {}", cmdFactoryCenter.getClass().getCanonicalName());
+            log.info("CmdFactoryCenter : {}", controlProxyFactory.getClass().getCanonicalName());
             log.info("Socket port :{}",settings.port);
 
             //f.channel().closeFuture().sync();

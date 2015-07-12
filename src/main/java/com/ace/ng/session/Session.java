@@ -6,10 +6,14 @@ package com.ace.ng.session;
  * 客户端连接对应的Session
  * */
 
-import com.ace.ng.codec.CustomBuf;
+import com.ace.ng.annotation.MsgType;
+import com.ace.ng.codec.DataBuffer;
 import com.ace.ng.codec.Output;
 import com.ace.ng.codec.OutputPacket;
+import com.ace.ng.proxy.MessageProxy;
+import com.ace.ng.proxy.MessageProxyFactory;
 import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.Message;
 import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -31,8 +35,6 @@ public class Session implements ISession{
 	public static final AttributeKey<Boolean> NEED_ENCRYPT=new AttributeKey<>("needencrypt");
 	/**每个客户端连接存储的密码表**/
 	public static final AttributeKey<List<Short>>  PASSPORT=new AttributeKey<>("passport");
-	/**验证报文合法性的自增ID**/
-	public static final AttributeKey<Integer>  INCREMENT=new AttributeKey<>("increment");
 	private Channel channel;//连接通道
 	private long createTime;//创建时间
 	private long lastActiveTime;//最后活动时间
@@ -146,7 +148,7 @@ public class Session implements ISession{
 	public Future<?> disconnect(boolean immediately, short cmd,Object... objects) {
 		Future<?> future=channel.newSucceededFuture();
 		if(channel.isActive()){
-			future=this.send(cmd, objects);
+			future=this.sendBinary(cmd, objects);
 			try {
 				if(immediately){
 					future.sync();
@@ -176,10 +178,10 @@ public class Session implements ISession{
 		channel.attr(key).set(value);
 	}
 	@Override
-	public Future<?> send(final int cmd, final Object... objects) {
-		Output message=new Output() {
+	public Future<?> sendBinary(final int cmd, final Object... objects) {
+ 		Output message=new Output() {
 			@Override
-			public void encode(CustomBuf buf) {
+			public void encode(DataBuffer buf) {
 				for(final Object output:objects){
 					Class clazz=output.getClass();
 					if(output instanceof Output){
@@ -207,7 +209,30 @@ public class Session implements ISession{
 					}
 				}
 			}
+
 		};
 		return  send(cmd,message);
+	}
+
+	@Override
+	public Future<?> sendJSON(int cmd, Object object) {
+		try {
+			MessageProxy proxy=MessageProxyFactory.ONLY_INSTANCE.getMessageProxy(MsgType.JSON,object.getClass());
+			final DataBuffer buffer=proxy.encode(object);
+			sendBinary(cmd,new Output(){
+				@Override
+				public void encode(DataBuffer buf) {
+					buf.writeBinary(buffer);
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Future<?> sendProtobuf(int cmd, Message.Builder protobuf) {
+		return null;
 	}
 }

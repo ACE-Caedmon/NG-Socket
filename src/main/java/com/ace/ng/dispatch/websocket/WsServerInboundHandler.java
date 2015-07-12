@@ -1,12 +1,9 @@
 package com.ace.ng.dispatch.websocket;
 
-import com.ace.ng.boot.CmdFactoryCenter;
-import com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder;
-import com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder;
-import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.proxy.ControlMethodProxy;
+import com.ace.ng.proxy.ControlProxyFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
-import com.ace.ng.session.SessionFire;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -26,9 +23,9 @@ public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
 
     private static final String WEBSOCKET_PATH = "/websocket";
     private WebSocketServerHandshaker handshaker;
-    private CmdFactoryCenter cmdFactoryCenter;
+    private ControlProxyFactory cmdFactoryCenter;
     private static final Logger log= LoggerFactory.getLogger(WsServerInboundHandler.class);
-    public WsServerInboundHandler(CmdFactoryCenter cmdFactoryCenter){
+    public WsServerInboundHandler(ControlProxyFactory cmdFactoryCenter){
         this.cmdFactoryCenter=cmdFactoryCenter;
     }
 
@@ -36,13 +33,7 @@ public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         final ISession session=new Session(ctx.channel());
         ctx.channel().attr(Session.SESSION_KEY).set(session);
-        cmdFactoryCenter.executeCmd(session, new CmdHandler() {
-            @Override
-            public void execute(Object user) {
-                SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
-            }
-        });
-
+        //连接事件触发
     }
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
@@ -55,9 +46,8 @@ public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
             handleHttpRequest(ctx, (FullHttpRequest) msg);
         } else if (msg instanceof WebSocketFrame) {
             handleWebSocketFrame(ctx, (WebSocketFrame) msg);
-        }else if(msg instanceof CmdHandler){
-            ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-            cmdFactoryCenter.executeCmd(session, (CmdHandler)msg);
+        }else if(msg instanceof ControlMethodProxy){
+            //消息处理
         }
     }
     @Override
@@ -103,10 +93,10 @@ public class WsServerInboundHandler extends SimpleChannelInboundHandler<Object>{
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
         } else {
             handshaker.handshake(ctx.channel(), req);
-            ctx.pipeline().addAfter("wsdecoder", "decoder1", new WsPacketDecoder());
-            ctx.pipeline().addAfter("decoder1", "decoder2", new ServerBinaryEncryptDecoder(cmdFactoryCenter));
-            ctx.pipeline().addAfter("wsencoder", "encoder1", new WsPacketEncoder());
-            ctx.pipeline().addAfter("encoder1", "encoder2", new ServerBinaryEncryptEncoder());
+//            ctx.pipeline().addAfter("wsdecoder", "decoder1", new WsPacketDecoder());
+//            ctx.pipeline().addAfter("decoder1", "decoder2", new ServerBodyDecoder(controlProxyFactory));
+//            ctx.pipeline().addAfter("wsencoder", "encoder1", new WsPacketEncoder());
+//            ctx.pipeline().addAfter("encoder1", "encoder2", new ServerBodyEncoder());
 
 
         }

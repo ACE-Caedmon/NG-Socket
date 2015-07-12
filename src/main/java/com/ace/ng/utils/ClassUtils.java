@@ -110,32 +110,40 @@ public class ClassUtils {
         }
         return result;
     }
-    public static Annotation getAnnotation(Class c,Class annotationClass){
-        Annotation result=c.getAnnotation(annotationClass);
+    public static <T extends Annotation> T getAnnotation(Class c,Class<T> annotationClass){
+        T result=(T)c.getAnnotation(annotationClass);
         return result;
     }
     public static boolean hasAnnotation(Class c,Class annotationClass){
         return getAnnotation(c,annotationClass)!=null;
     }
-    public static Annotation getAnnotation(Method m,Class annotationClass){
+    public static Annotation getAnnotation(Method m,Class<? extends Annotation> annotationClass){
         Annotation result=m.getAnnotation(annotationClass);
         return result;
     }
     public static boolean hasAnnotation(Method m,Class annotationClass){
         return getAnnotation(m,annotationClass)!=null;
     }
-    public static Annotation getAnnotation(Field f,Class annotationClass){
-        Annotation result=f.getAnnotation(annotationClass);
+    public static <T extends Annotation> T getAnnotation(Field f,Class<T> annotationClass){
+        T result=f.getAnnotation(annotationClass);
         return result;
     }
     public static boolean hasAnnotation(Field f,Class annotationClass){
         return getAnnotation(f,annotationClass)!=null;
     }
-    public static Annotation getAnnotation(Parameter p,Class annotationClass){
-        Annotation result=p.getAnnotation(annotationClass);
+    public static <T extends Annotation> T getAnnotation(Parameter p,Class<T> annotationClass){
+        T result=p.getAnnotation(annotationClass);
         return result;
     }
     public static boolean hasAnnotation(Parameter p,Class annotationClass){
         return getAnnotation(p,annotationClass)!=null;
+    }
+    public static boolean checkClassType(Class autualClass,Class...exceptClasses){
+        for(Class exceptClass:exceptClasses){
+            if(autualClass.isAssignableFrom(exceptClass)){
+                return true;
+            }
+        }
+        return false;
     }
 }

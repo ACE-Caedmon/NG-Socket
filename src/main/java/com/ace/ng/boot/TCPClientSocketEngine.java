@@ -1,9 +1,8 @@
 package com.ace.ng.boot;
 
-import com.ace.ng.annotation.CmdControl;
-import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.dispatch.tcp.TCPClientInitializer;
 import com.ace.ng.handler.ValidateOKHandler;
+import com.ace.ng.proxy.ControlProxyFactory;
 import com.ace.ng.session.SessionFire;
 import com.ace.ng.utils.NGSocketParams;
 import io.netty.bootstrap.Bootstrap;
@@ -18,22 +17,18 @@ import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
  * Created by Administrator on 2015/4/25.
  */
 public class TCPClientSocketEngine extends SocketEngine{
     private static final Logger log= LoggerFactory.getLogger(TCPClientSocketEngine.class);
-    private TCPClientSettings settings;
     private EventLoopGroup eventExecutors;
     private Channel channel;
-    public TCPClientSocketEngine(TCPClientSettings settings,CmdFactoryCenter cmdFactoryCenter) {
-        super(cmdFactoryCenter);
-        this.settings=settings;
+    public TCPClientSocketEngine(TCPClientSettings settings,ControlProxyFactory controlProxyFactory) {
+        super(settings,controlProxyFactory);
     }
-    public TCPClientSocketEngine(TCPClientSettings settings,CmdFactoryCenter cmdFactoryCenter,EventLoopGroup eventExecutors) {
-        super(cmdFactoryCenter);
+    public TCPClientSocketEngine(TCPClientSettings settings,ControlProxyFactory controlProxyFactory,EventLoopGroup eventExecutors) {
+        super(settings,controlProxyFactory);
         this.settings=settings;
         this.eventExecutors=eventExecutors;
     }
@@ -47,18 +42,18 @@ public class TCPClientSocketEngine extends SocketEngine{
             workerGroup=this.eventExecutors;
         }
         try {
-            ChannelInitializer<SocketChannel> initializer=new TCPClientInitializer(this.cmdFactoryCenter,settings);;
+            ChannelInitializer<SocketChannel> initializer=new TCPClientInitializer(this.controlProxyFactory,(TCPClientSettings)settings);;
             Bootstrap b = new Bootstrap();
             b.group(workerGroup)
                     .channel(NioSocketChannel.class)
                     .handler(initializer);
-            ChannelFuture f =b.connect(settings.host,settings.port);
+            ChannelFuture f =b.connect(((TCPClientSettings)settings).host,settings.port);
             this.channel=f.sync().channel();
             log.info("Protocol type: {}",TCP_PROTOCOL);
             log.info("Worker thread : {}",settings.workerThreadSize);
             log.info("Logic thread:{}",settings.cmdThreadSize);
             log.info("Socket package encrypt : {}", NGSocketParams.SOCKET_PACKET_ENCRYPT);
-            log.info("CmdFactoryCenter : {}", cmdFactoryCenter.getClass().getCanonicalName());
+            log.info("CmdFactoryCenter : {}", controlProxyFactory.getClass().getCanonicalName());
             log.info("Socket port :{}",settings.port);
 
         } catch (Exception e) {
@@ -68,18 +63,6 @@ public class TCPClientSocketEngine extends SocketEngine{
             }
             workerGroup.shutdownGracefully();
             return;
-        }
-        for(Extension extension:extensions){
-            log.info("Load extension:{}", StringUtil.simpleClassName(extension));
-            extension.init();
-            List<Class<? extends CmdHandler>> classes=extension.getCmdHandlers();
-            for(Class c:classes){
-                CmdControl annotation= (CmdControl) c.getAnnotation(CmdControl.class);
-                if(annotation==null){
-                    throw new NullPointerException("Class has no CmdControl:"+c.getName());
-                }
-                cmdFactoryCenter.registerCmdHandler(annotation.control(), c);
-            }
         }
         //如果系统配置不加密则不发送密码表
         if(NGSocketParams.SOCKET_PACKET_ENCRYPT){

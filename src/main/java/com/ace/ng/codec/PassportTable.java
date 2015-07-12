@@ -14,7 +14,7 @@ public class PassportTable implements Output{
 	public PassportTable(List<Short> passports) {
 		this.passports = passports;
 	}
-	public void encode(CustomBuf buf) {
+	public void encode(DataBuffer buf) {
 		if(passports.size()==256){
 			for(Short passport:passports){
 				buf.writeShort(passport);
@@ -22,7 +22,6 @@ public class PassportTable implements Output{
 		}else{
 			logger.error("密码表长度错误:length={}",passports.size());
 		}
-	
 	}
 
 }

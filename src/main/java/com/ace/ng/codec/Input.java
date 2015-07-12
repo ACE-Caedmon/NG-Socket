@@ -11,6 +11,6 @@ package com.ace.ng.codec;
 	 * 解码
      * @param data ByteBuf装饰器，包含主要业务逻辑数据
 	 * */
-	void decode(CustomBuf data);
+	void decode(DataBuffer data);
 	
 }

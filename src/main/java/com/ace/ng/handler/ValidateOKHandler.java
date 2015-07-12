@@ -21,7 +21,7 @@ public class ValidateOKHandler implements IEventHandler<ISession> {
 		//session.setVar(VarConst.INCREMENT, new AtomicInteger(passports.get(0)));
 		session.setAttribute(Session.PASSPORT, passports);
 		PassportTable passportMessage=new PassportTable(passports);
-		Future<?> future=session.send((short) -1, passportMessage);
+		Future<?> future=session.sendBinary(-1, passportMessage);
 		try {
 			future.get();
 		} catch (InterruptedException e) {

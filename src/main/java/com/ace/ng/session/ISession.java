@@ -5,6 +5,7 @@
 package com.ace.ng.session;
 
 import com.ace.ng.codec.Output;
+import com.google.protobuf.Message;
 import com.jcwx.frm.current.IActor;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
@@ -30,10 +31,6 @@ public interface ISession {
 	 * @return 客户端远程端口
 	 * */
 	int getClientPort();
-	/**
-	 * 发送消息
-	 * */
-	Future<?> send(int cmd,Object... output);
 	/**
 	 * 断开客户端连接
 	 * @param immediately 是否立即断开
@@ -87,5 +84,8 @@ public interface ISession {
 	void setActor(IActor actor);
 
 	IActor getActor();
+	Future<?> sendJSON(int cmd,Object object);
+	Future<?> sendProtobuf(int cmd,Message.Builder protobuf);
+	Future<?> sendBinary(int cmd, Object... beans);
 
 }

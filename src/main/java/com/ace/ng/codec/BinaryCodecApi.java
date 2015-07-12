@@ -1,15 +1,9 @@
 package com.ace.ng.codec;
-
-import com.ace.ng.boot.CmdFactoryCenter;
 import com.ace.ng.codec.binary.BinaryEncryptUtil;
 import com.ace.ng.codec.binary.BinaryPacket;
-import com.ace.ng.dispatch.javassit.HandlerPropertySetter;
-import com.ace.ng.dispatch.javassit.NoOpHandlerPropertySetter;
-import com.ace.ng.dispatch.message.CmdHandler;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.utils.CommonUtils;
-import com.ace.ng.utils.NGSocketParams;
 import com.google.protobuf.AbstractMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -27,10 +21,7 @@ import java.util.*;
  */
 public class BinaryCodecApi {
     private static Logger log= LoggerFactory.getLogger(BinaryCodecApi.class);
-    private static Map<Integer,HandlerPropertySetter> handlerPropertySetterMap=new HashMap<>(100);
-    private static ClassPool classPool=ClassPool.getDefault();
     private static Map<String,ProtoCacheElement> protoElementCache =new HashMap<>();
-    private static final Object lock=new Object();
     public static class EncryptBinaryPacket {
         public byte[] content;
         public int passwordIndex;
@@ -48,7 +39,7 @@ public class BinaryCodecApi {
         }
         ByteBuf buf=PooledByteBufAllocator.DEFAULT.buffer();
         buf.writeInt(output.getCmd());
-        CustomBuf content=new ByteCustomBuf(buf);
+        DataBuffer content=new ByteDataBuffer(buf);
         output.getOutput().encode(content);
         byte[] dst=new byte[buf.readableBytes()];
         buf.readBytes(dst);
@@ -67,15 +58,15 @@ public class BinaryCodecApi {
     }
     public static ByteBuf decodeContent(BinaryPacket packet,ChannelHandlerContext ctx){
         ByteBuf content=packet.getContent();
-        short length=(short)content.readableBytes();
+        int length=content.readableBytes();
         int hasReadLength=0;
+        //是否加密
         boolean isEncrypt=content.readBoolean();
         hasReadLength+=1;
         ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
         byte entryptOffset=content.readByte();
         hasReadLength+=1;
-        ByteBuf bufForDecode= Unpooled.buffer();//.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
-        //ByteBuf bufForDecode=ctx.channel().config().getAllocator().buffer();
+        ByteBuf result= PooledByteBufAllocator.DEFAULT.buffer();//.DEFAULT.buffer();//用来缓存一条报文的ByteBuf
         if(isEncrypt){
             byte[] dst=new byte[length-hasReadLength];//存储包体
             content.readBytes(dst);//读取包体内容
@@ -84,139 +75,84 @@ public class BinaryCodecApi {
             short passport=passportList.get(index);//得到密码
             String secretKey=ctx.channel().attr(Session.SECRRET_KEY).get();
             BinaryEncryptUtil.decode(dst, dst.length, secretKey, passport);//解密
-            bufForDecode.writeBytes(dst);
+            result.writeBytes(dst);
         }else {
-            bufForDecode.writeBytes(content, length - hasReadLength);
+            result.writeBytes(content, length - hasReadLength);
         }
-        return bufForDecode;
+        return result;
     }
-    public static CmdHandler decodeCmdHandler(CmdFactoryCenter cmdFactoryCenter,ByteBuf bufForDecode){
-        int cmd=bufForDecode.readInt();
-        CmdHandler<?> handler=cmdFactoryCenter.getCmdHandler(cmd);
-        if(handler!=null){
-            try {
-                CustomBuf contentBuf=new ByteCustomBuf(bufForDecode);//将ByteBuf作为构造参数传入自定义的装饰器
-                HandlerPropertySetter propertySetter=getHandlerPropertySetter(cmd, handler);
-                propertySetter.setHandlerProperties(contentBuf,handler);
-                if(bufForDecode.isReadable()){
-                    log.warn("数据包内容未读完:cmd={},remain={}", cmd, bufForDecode.readableBytes());
-                }
-            } catch (Exception e) {
-                bufForDecode.skipBytes(bufForDecode.readableBytes());
-                throw new RuntimeException("解码异常(cmd = "+cmd+")",e);
-
-            }
-        }else{
-            bufForDecode.skipBytes(bufForDecode.readableBytes());
-            if(NGSocketParams.WARN_UNKOWN_CMD){
-                log.warn("未知指令:cmd={}",cmd);
-            }
-
-        }
-        return handler;
-    }
-    private static HandlerPropertySetter getHandlerPropertySetter(Integer cmd,CmdHandler<?> handler) throws  Exception{
-        //构造HandlerPropertySetter
-        HandlerPropertySetter handlerPropertySetter=handlerPropertySetterMap.get(cmd);
-        if(handlerPropertySetter==null){
-            String handlerClassName=handler.getClass().getName();
-            CtClass tempHandler=classPool.get(handlerClassName);
-            String handlerProxyName=NoOpHandlerPropertySetter.class.getName()+"Proxy$"+cmd;
-            CtClass handlerPropertySetterClass=classPool.getOrNull(handlerProxyName);
-            if(handlerPropertySetterClass==null){
-                handlerPropertySetterClass=classPool.getAndRename(NoOpHandlerPropertySetter.class.getName(),
-                        handlerProxyName);
-            }
-            synchronized (lock){
-                //双重检查
-                if((handlerPropertySetter=handlerPropertySetterMap.get(cmd))==null){
-                    CtMethod setPropertiesMethod=handlerPropertySetterClass.
-                            getDeclaredMethod("setHandlerProperties");
-                    if(CommonUtils.hasDeclaredMethod(handler.getClass(), "decode", CustomBuf.class)){//如果自己实现了decode方法,则不采用自动set方式
-                        setPropertiesMethod.insertAfter("$2.decode($1);");
-                    }else{//自动调用set方法解码
-                        addAutoDecodeSrc(setPropertiesMethod,tempHandler,handlerClassName);
-                    }
-                    Class clazz=handlerPropertySetterClass.toClass();
-                    handlerPropertySetter=(HandlerPropertySetter)clazz.newInstance();
-                    handlerPropertySetterMap.put(cmd,handlerPropertySetter);
-                }
-            }
-        }
-        return handlerPropertySetter;
-    }
-    private static void addAutoDecodeSrc(CtMethod setPropertiesMethod,CtClass tempHandler,String handlerClassName) throws Exception{
-        CtField[] protocolFields=tempHandler.getDeclaredFields();
-        setPropertiesMethod.addLocalVariable("h",tempHandler);
-        setPropertiesMethod.insertAfter(" h=((" + handlerClassName + ")$2);");
-        String setHead="h.set";
-        for(CtField f:protocolFields){
-            int modifier=f.getModifiers();
-            if (!Modifier.isStatic(modifier)&&!Modifier.isFinal(modifier)){
-                NotDecode notDecode=(NotDecode)f.getAnnotation(NotDecode.class);
-                if(notDecode==null||!notDecode.value()){//需要解码的字段
-                    CtClass typeClass=f.getType();
-                    String typeSimpleName=typeClass.getSimpleName();
-                    String typeAllName=typeClass.getName();
-                    String setMethodString=setHead+CommonUtils.firstToUpperCase(f.getName());
-                    switch (typeSimpleName){
-                        case "long":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readLong());");
-                            break;
-                        case "int":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readInt());");
-                            break;
-                        case "short":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readShort());");
-                            break;
-                        case "byte":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readByte());");
-                            break;
-                        case "boolean":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readBoolean());");
-                            break;
-                        case "float":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readFloat());");
-                            break;
-                        case "double":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readDouble());");
-                            break;
-                        case "String":
-                            setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
-                            break;
-                        default:
-                            // builderClassName Builder的ClassName
-                            //protoClassName Proto的ClassName
-                            String builderClassName=null;
-                            boolean firstProto=true;
-                            String protoClassName=null;
-                            if(protoElementCache.containsKey(typeAllName)){
-                                builderClassName= protoElementCache.get(typeAllName).builderClassName;
-                                protoClassName=protoElementCache.get(typeAllName).protoClassName;
-                                firstProto=false;
-                            }else{
-                                builderClassName=typeAllName.replaceAll("\\$",".");
-                                if(AbstractMessage.Builder.class.isAssignableFrom(Class.forName(typeAllName))) {
-                                    int lastIndex = builderClassName.lastIndexOf("Builder");
-                                    protoClassName = builderClassName.substring(0, lastIndex);
-                                    protoClassName = protoClassName.replaceAll("\\$", ".");
-                                    firstProto=true;
-                                }else{
-                                    throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
-                                }
-                            }
-                            setPropertiesMethod.insertAfter(setMethodString+"(("+builderClassName+")$1.readProtoBuf("+protoClassName+"newBuilder()));");
-                            if(firstProto){
-                                ProtoCacheElement element=new ProtoCacheElement();
-                                element.builderClassName=builderClassName;
-                                element.protoClassName=protoClassName;
-                                protoElementCache.put(typeAllName, element);
-                            }
-                    }
-
-                }
-            }
-
-        }
-    }
+//    private static void addAutoDecodeSrc(CtMethod setPropertiesMethod,CtClass tempHandler,String handlerClassName) throws Exception{
+//        CtField[] protocolFields=tempHandler.getDeclaredFields();
+//        setPropertiesMethod.addLocalVariable("h",tempHandler);
+//        setPropertiesMethod.insertAfter(" h=((" + handlerClassName + ")$2);");
+//        String setHead="h.set";
+//        for(CtField f:protocolFields){
+//            int modifier=f.getModifiers();
+//            if (!Modifier.isStatic(modifier)&&!Modifier.isFinal(modifier)){
+//                NotDecode notDecode=(NotDecode)f.getAnnotation(NotDecode.class);
+//                if(notDecode==null||!notDecode.value()){//需要解码的字段
+//                    CtClass typeClass=f.getType();
+//                    String typeSimpleName=typeClass.getSimpleName();
+//                    String typeAllName=typeClass.getName();
+//                    String setMethodString=setHead+CommonUtils.firstToUpperCase(f.getName());
+//                    switch (typeSimpleName){
+//                        case "long":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readLong());");
+//                            break;
+//                        case "int":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readInt());");
+//                            break;
+//                        case "short":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readShort());");
+//                            break;
+//                        case "byte":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readByte());");
+//                            break;
+//                        case "boolean":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readBoolean());");
+//                            break;
+//                        case "float":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readFloat());");
+//                            break;
+//                        case "double":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readDouble());");
+//                            break;
+//                        case "String":
+//                            setPropertiesMethod.insertAfter(setMethodString+"($1.readString());");
+//                            break;
+//                        default:
+//                            // builderClassName Builder的ClassName
+//                            //protoClassName Proto的ClassName
+//                            String builderClassName=null;
+//                            boolean firstProto=true;
+//                            String protoClassName=null;
+//                            if(protoElementCache.containsKey(typeAllName)){
+//                                builderClassName= protoElementCache.get(typeAllName).builderClassName;
+//                                protoClassName=protoElementCache.get(typeAllName).protoClassName;
+//                                firstProto=false;
+//                            }else{
+//                                builderClassName=typeAllName.replaceAll("\\$",".");
+//                                if(AbstractMessage.Builder.class.isAssignableFrom(Class.forName(typeAllName))) {
+//                                    int lastIndex = builderClassName.lastIndexOf("Builder");
+//                                    protoClassName = builderClassName.substring(0, lastIndex);
+//                                    protoClassName = protoClassName.replaceAll("\\$", ".");
+//                                    firstProto=true;
+//                                }else{
+//                                    throw new UnsupportedOperationException("不支持的自动解码字段类型:" + typeSimpleName);
+//                                }
+//                            }
+//                            setPropertiesMethod.insertAfter(setMethodString+"(("+builderClassName+")$1.readProtoBuf("+protoClassName+"newBuilder()));");
+//                            if(firstProto){
+//                                ProtoCacheElement element=new ProtoCacheElement();
+//                                element.builderClassName=builderClassName;
+//                                element.protoClassName=protoClassName;
+//                                protoElementCache.put(typeAllName, element);
+//                            }
+//                    }
+//
+//                }
+//            }
+//
+//        }
+//    }
 }

@@ -9,5 +9,5 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 @Documented
 public @interface CmdMethod {
-    int method();
+    int cmd();
 }

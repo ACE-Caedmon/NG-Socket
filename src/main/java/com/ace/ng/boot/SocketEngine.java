@@ -1,7 +1,7 @@
 package com.ace.ng.boot;
 
 import com.ace.ng.annotation.CmdControl;
-import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.proxy.ControlProxyFactory;
 import com.ace.ng.utils.ClassUtils;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
@@ -20,10 +20,12 @@ public abstract class SocketEngine {
     protected Set<Extension> extensions;
     private static Logger log= LoggerFactory.getLogger(SocketEngine.class);
     public static final String TCP_PROTOCOL="tcp",WEBSOCKET_PROTOCOL="websocket";
-    protected CmdFactoryCenter cmdFactoryCenter;
-    public SocketEngine(CmdFactoryCenter cmdFactoryCenter){
+    protected ControlProxyFactory controlProxyFactory;
+    protected EngineSettings settings;
+    public SocketEngine(EngineSettings settings,ControlProxyFactory controlProxyFactory){
+        this.settings=settings;
         this.extensions=new HashSet<>();
-        this.cmdFactoryCenter=cmdFactoryCenter;
+        this.controlProxyFactory = controlProxyFactory;
     }
     /**
      * 停止网络服务
@@ -47,28 +49,23 @@ public abstract class SocketEngine {
         extensions.add(extension);
     }
     public void start(){
+        load();
         startSocket();
-        loadExtensions();
+
     }
     public abstract void startSocket();
-    public void loadExtensions(){
+    public void load(){
         for(Extension extension:extensions){
             log.info("Load extension:{}", StringUtil.simpleClassName(extension));
             extension.init();
-            List<Class> cmdControls=new ArrayList<>();
-            //生成
-            try{
-                cmdControls=ClassUtils.getClasssFromPackage("com.ace.ng");
-            }catch (Exception e){
-
-            }
-            for(Class c:cmdControls){
-                CmdControl annotation= (CmdControl) c.getAnnotation(CmdControl.class);
-                if(annotation==null){
-                    throw new NullPointerException("Class has no CmdControl:"+c.getName());
-                }
-                cmdFactoryCenter.registerCmdHandler(annotation.control(),c);
-            }
+        }
+        List<Class> cmdControls=new ArrayList<>();
+        //生成
+        try{
+            cmdControls= ClassUtils.findClassesByAnnotation(settings.scanPackage, CmdControl.class);
+            controlProxyFactory.loadClasses(cmdControls);
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 }

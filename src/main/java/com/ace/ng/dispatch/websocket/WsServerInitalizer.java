@@ -1,7 +1,6 @@
 package com.ace.ng.dispatch.websocket;
 
-import com.ace.ng.boot.CmdFactoryCenter;
-import com.ace.ng.boot.ServerSettings;
+import com.ace.ng.proxy.ControlProxyFactory;
 import com.ace.ng.session.Session;
 import com.ace.ng.utils.NGSocketParams;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -16,8 +15,8 @@ import io.netty.handler.logging.LoggingHandler;
  * Created by Administrator on 2015/4/13.
  */
 public class WsServerInitalizer extends ChannelInitializer<SocketChannel> {
-    private CmdFactoryCenter cmdFactoryCenter;
-    public WsServerInitalizer(CmdFactoryCenter cmdFactoryCenter){
+    private ControlProxyFactory cmdFactoryCenter;
+    public WsServerInitalizer(ControlProxyFactory cmdFactoryCenter){
         this.cmdFactoryCenter=cmdFactoryCenter;
     }
     @Override

@@ -1,7 +1,7 @@
 package com.ace.ng.dispatch.javassit;
 
-import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.proxy.ControlMethodProxy;
 
 public interface CmdHandlerCreator {
-	CmdHandler<?> create(Integer cmd);
+	ControlMethodProxy<?> create(Integer cmd);
 }

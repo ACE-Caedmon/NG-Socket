@@ -11,7 +11,7 @@ public class ProtoBufOutput implements Output{
 		this.builder=builder;
 	}
 	@Override
-	public void encode(CustomBuf buf) {
+	public void encode(DataBuffer buf) {
 		buf.writeProtoBuf(builder);
 	}
 

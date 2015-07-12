@@ -20,8 +20,8 @@ NG-Socket
         PropertyConfigurator.configure("conf/log4j.properties");
         WsClientSettings settings=new WsClientSettings();
         settings.url="ws://localhost:8001/websocket";
-        CmdFactoryCenter cmdFactoryCenter=new DefaultCmdFactoryCenter(2);
-        WsClientSocketEngine socketEngine=new WsClientSocketEngine(settings,cmdFactoryCenter);
+        CmdFactoryCenter controlProxyFactory=new DefaultCmdFactoryCenter(2);
+        WsClientSocketEngine socketEngine=new WsClientSocketEngine(settings,controlProxyFactory);
         socketEngine.registerExtension(new TestExtension());
         socketEngine.start();
 
@@ -29,7 +29,7 @@ NG-Socket
 三.网络协议
 -----------------------------------  
 协议格式详细可以查看doc目录下对应的com.ace.ng.codec.encrypt.ServerBinaryEncryptDecoder类的注释。
-com.ace.ng.codec.encrypt.ServerBinaryEncryptEncoder
+com.ace.ng.codec.encrypt.ServerBodyEncoder
 四.消息解码
 -----------------------------------
 ### 性能优化

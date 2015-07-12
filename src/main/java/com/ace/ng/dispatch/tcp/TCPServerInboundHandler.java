@@ -5,8 +5,8 @@
  * */
 package com.ace.ng.dispatch.tcp;
 
-import com.ace.ng.boot.CmdFactoryCenter;
-import com.ace.ng.dispatch.message.CmdHandler;
+import com.ace.ng.proxy.ControlMethodProxy;
+import com.ace.ng.proxy.ControlProxyFactory;
 import com.ace.ng.session.ISession;
 import com.ace.ng.session.Session;
 import com.ace.ng.session.SessionFire;
@@ -18,11 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Sharable
-public class TCPServerInboundHandler extends SimpleChannelInboundHandler<CmdHandler<?>>{
+public class TCPServerInboundHandler extends SimpleChannelInboundHandler<ControlMethodProxy>{
 	private static final Logger log = LoggerFactory.getLogger(TCPServerInboundHandler.class);
-	private CmdFactoryCenter cmdFactoryCenter;
-	public TCPServerInboundHandler(CmdFactoryCenter cmdFactoryCenter){
-		this.cmdFactoryCenter=cmdFactoryCenter;
+	private ControlProxyFactory controlProxyFactory;
+	public TCPServerInboundHandler(ControlProxyFactory controlProxyFactory){
+		this.controlProxyFactory=controlProxyFactory;
 	}
     /**
      * 连接断开是会调用此方法，方法会将Session相关信息移除，并且从Channel删除保存的Session对象
@@ -45,14 +45,14 @@ public class TCPServerInboundHandler extends SimpleChannelInboundHandler<CmdHand
 	}
     /**
      * 有客户端数据发送到服务端时会调用此方法，负责创建MessageTask独享，提交给自定义线程池处理业务逻辑。
-     * @param  ctx Channel对应的ChannelContext
-     * @param handler 用户自定义实现的CmdHandler
+     * @param  ctx
+     * @param control
      * */
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, CmdHandler handler)
+	protected void channelRead0(ChannelHandlerContext ctx, ControlMethodProxy control)
 			throws Exception {
 		ISession session=ctx.channel().attr(Session.SESSION_KEY).get();
-		cmdFactoryCenter.executeCmd(session,handler);
+		control.doCmd(session);
 	}
     /**
      * 连接创建时会调用此方法，此时会负责创建ISession,并且为ISession分配一个Actor
@@ -61,14 +61,9 @@ public class TCPServerInboundHandler extends SimpleChannelInboundHandler<CmdHand
 	@Override
 	public void channelActive(final ChannelHandlerContext ctx) throws Exception {
 		final ISession session=new Session(ctx.channel());
-		cmdFactoryCenter.executeCmd(session, new CmdHandler() {
-			@Override
-			public void execute(Object user) {
-				ctx.channel().attr(Session.SESSION_KEY).set(session);
-				SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
-			}
-		});
-	
+		ctx.channel().attr(Session.SESSION_KEY).set(session);
+		SessionFire.getInstance().fireEvent(SessionFire.SessionEvent.SESSION_CONNECT, session);
+
 	}
     /**
      * 出现异常时
